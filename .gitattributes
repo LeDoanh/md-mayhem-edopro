@@ -1,0 +1,6 @@
+# Lua, config and text files are read by EDOPro on Windows, Linux and Android.
+# Normalise to LF so a clone is byte-identical on every platform.
+* text=auto eol=lf
+
+*.png binary
+*.zip binary

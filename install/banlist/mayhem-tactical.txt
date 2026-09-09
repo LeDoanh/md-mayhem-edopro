@@ -1,0 +1,19 @@
+# Mayhem Tactical - forbidden cards, by exact English name.
+# tools/build-banlist.py resolves each name against EDOPro's cards.cdb and
+# writes every passcode that carries it (alternate artworks included).
+# Lines starting with # are comments; blank lines are ignored.
+
+## Continuous floodgates
+Skill Drain
+There Can Be Only One
+Gozen Match
+Rivalry of Warlords
+Anti-Spell Fragrance
+Dimensional Fissure
+Macro Cosmos
+
+## Lingering turn locks
+Droll & Lock Bird
+Artifact Scythe
+D/D/D Duo-Dawn King Kali Yuga
+Hot Red Dragon Archfiend King Calamity

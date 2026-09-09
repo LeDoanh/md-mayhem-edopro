@@ -1,0 +1,5 @@
+# Which EDOPro install this machine targets - set by tools/install.ps1.
+.game-path
+
+# Portable packages built by tools/make-package.py.
+dist/

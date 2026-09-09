@@ -1,0 +1,207 @@
+{
+  "$comment": "Single source of truth linking the web-app mutation sheet (web-app/public/mutations.xlsx) to the EDOPro plugin. sheet_name matches the Name column exactly; script names the file in src/cores/, whose stem IS the core id. code is permanent - it is what a host types into Starting LP.",
+  "version": "0.1.0",
+  "cores": [
+    {
+      "sheet_name": "Tốc Chiến Bạc",
+      "code": 1,
+      "tier": "Bac",
+      "status": "partial",
+      "script": "speed_blitz",
+      "params": {
+        "lp": 6000
+      },
+      "room_settings": {
+        "time_limit": 120
+      },
+      "note": "LP enforced by script; the 120s clock is a room setting the host must pick."
+    },
+    {
+      "sheet_name": "Hạn Điền Bạc",
+      "code": 2,
+      "tier": "Bac",
+      "status": "implemented",
+      "script": "high_friction",
+      "params": {
+        "max_special_summons": 7
+      }
+    },
+    {
+      "sheet_name": "Tiết Kiệm Bạc",
+      "code": 3,
+      "tier": "Bac",
+      "status": "implemented",
+      "script": "thrift",
+      "params": {
+        "draw": 2
+      }
+    },
+    {
+      "sheet_name": "Mỏng Manh Bạc",
+      "code": 4,
+      "tier": "Bac",
+      "status": "implemented",
+      "script": "resource_starvation",
+      "params": {
+        "hand": 4
+      }
+    },
+    {
+      "sheet_name": "Năng Lượng Bạc",
+      "code": 5,
+      "tier": "Bac",
+      "status": "implemented",
+      "script": "energy_surge",
+      "params": {
+        "amount": 1000
+      },
+      "note": "Turn player recovers at their own Standby Phase."
+    },
+    {
+      "sheet_name": "Giới Hạn Bạc",
+      "code": 6,
+      "tier": "Bac",
+      "status": "implemented",
+      "script": "extra_embargo",
+      "params": {
+        "max_extra": 10
+      },
+      "note": "Enforced as an automatic game loss at startup, not a deck-editor block."
+    },
+    {
+      "sheet_name": "Tốc Chiến Vàng",
+      "code": 7,
+      "tier": "Vang",
+      "status": "partial",
+      "script": "speed_blitz",
+      "params": {
+        "lp": 4000
+      },
+      "room_settings": {
+        "time_limit": 60
+      },
+      "note": "LP enforced by script; the 60s clock is a room setting."
+    },
+    {
+      "sheet_name": "Hạn Điền Vàng",
+      "code": 8,
+      "tier": "Vang",
+      "status": "implemented",
+      "script": "high_friction",
+      "params": {
+        "max_special_summons": 5
+      }
+    },
+    {
+      "sheet_name": "Tiết Kiệm Vàng",
+      "code": 9,
+      "tier": "Vang",
+      "status": "implemented",
+      "script": "thrift",
+      "params": {
+        "draw": 0
+      }
+    },
+    {
+      "sheet_name": "Mỏng Manh Vàng",
+      "code": 10,
+      "tier": "Vang",
+      "status": "implemented",
+      "script": "resource_starvation",
+      "params": {
+        "hand": 3
+      }
+    },
+    {
+      "sheet_name": "Lực Hút Vàng",
+      "code": 11,
+      "tier": "Vang",
+      "status": "planned",
+      "script": "heavy_gravity",
+      "params": {
+        "min_main": 50
+      },
+      "mechanism": "EVENT_STARTUP validator: Duel.GetFieldGroupCount(p, LOCATION_DECK, 0) < min_main => Duel.Win(1-p). Same shape as extra_embargo."
+    },
+    {
+      "sheet_name": "Giới Hạn Vàng",
+      "code": 12,
+      "tier": "Vang",
+      "status": "implemented",
+      "script": "extra_embargo",
+      "params": {
+        "max_extra": 6
+      }
+    },
+    {
+      "sheet_name": "Tử Chiến",
+      "code": 13,
+      "tier": "KimCuong",
+      "status": "partial",
+      "script": "speed_blitz",
+      "params": {
+        "lp": 2000
+      },
+      "also_needs": [
+        "no_hand_effects"
+      ],
+      "room_settings": {
+        "time_limit": 30
+      },
+      "note": "LP enforced; 30s clock is a room setting; the handtrap ban needs the planned no_hand_effects core."
+    },
+    {
+      "sheet_name": "(no sheet entry - handtrap lock)",
+      "code": 14,
+      "tier": "KimCuong",
+      "status": "planned",
+      "script": "no_hand_effects",
+      "mechanism": "EFFECT_CANNOT_ACTIVATE with a value function rejecting re:GetHandler():IsLocation(LOCATION_HAND). Blocks every handtrap by position rather than by name, so no card list goes stale.",
+      "note": "Component of Tử Chiến and of the Old-School Clash format in Yêu cầu.txt."
+    },
+    {
+      "sheet_name": "Nhất Kích",
+      "code": 15,
+      "tier": "KimCuong",
+      "status": "implemented",
+      "script": "first_blood"
+    },
+    {
+      "sheet_name": "Tay Không",
+      "code": 16,
+      "tier": "KimCuong",
+      "status": "implemented",
+      "script": "resource_starvation",
+      "params": {
+        "hand": 1
+      }
+    },
+    {
+      "sheet_name": "Trống Rỗng",
+      "code": 17,
+      "tier": "KimCuong",
+      "status": "planned",
+      "script": "void_extra",
+      "mechanism": "EFFECT_CANNOT_SPECIAL_SUMMON with a value function rejecting cards whose previous location is LOCATION_EXTRA. Stopgap available today: extra_embargo with max_extra 0.",
+      "note": "Blocking the summon reads better than an instant loss, so it gets its own script."
+    },
+    {
+      "sheet_name": "Phong Ấn",
+      "code": 18,
+      "tier": "KimCuong",
+      "status": "implemented",
+      "script": "sealed_magic"
+    },
+    {
+      "sheet_name": "Tuyệt Vọng",
+      "code": 19,
+      "tier": "KimCuong",
+      "status": "planned",
+      "script": "no_special_summon",
+      "mechanism": "EFFECT_CANNOT_SPECIAL_SUMMON for both players. Stopgap available today: high_friction with max_special_summons 0."
+    }
+  ],
+  "lp_code_base": 1000000,
+  "lp_code_$comment": "Escape hatch past the 13 checkboxes. Starting LP is a uint32 that reaches the duel core untouched (OCG_Player.startingLP), so a host typing base+code into the Host window's Starting LP box selects any core in the library by number. The core then sets the real LP, defaulting to default_lp below.",
+  "default_lp": 8000
+}
