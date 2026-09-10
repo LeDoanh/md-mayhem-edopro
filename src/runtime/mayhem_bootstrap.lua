@@ -62,6 +62,7 @@ end
 --- Installs one core. Applying the same core twice would stack two conflicting
 --- rules, so the second attempt is refused and logged instead.
 function MAYHEM.ApplyCore(id, params)
+	id = (MAYHEM_CORE_ALIASES or {})[id] or id
 	if not MAYHEM.cores[id] then
 		Duel.LoadScript("mayhem_core_" .. id .. ".lua")
 	end

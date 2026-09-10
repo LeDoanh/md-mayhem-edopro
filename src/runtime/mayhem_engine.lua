@@ -30,6 +30,17 @@ function M.Warn(message)
 	end
 end
 
+--- Announces an Energy Dominate balance. HINT_NUMBER is the only native,
+-- localization-free numeric UI; Debug.Message also reaches duel chat when the
+-- host enables the chat bit in coreLogOutput (EDOPro labels it Script Error).
+function M.AnnounceEnergy(player, energy, maximum, reason)
+	Duel.Hint(HINT_NUMBER, player, energy)
+	if Debug and Debug.Message then
+		Debug.Message(string.format("[MAYHEM ENERGY] Player %d %s: %d/%d",
+			player + 1, reason, energy, maximum))
+	end
+end
+
 --- Installs a permanent field rule that applies to both players.
 -- code          : EFFECT_* constant
 -- value         : number, or function(e, ...) depending on the effect
@@ -44,6 +55,30 @@ function M.FieldRule(code, value, player_target)
 	e:SetCode(code)
 	e:SetTargetRange(1, 1) -- 1 = self, 1 = opponent, i.e. everyone
 	e:SetValue(value)
+	Duel.RegisterEffect(e, 0)
+	return e
+end
+
+--- Installs a permanent player-scoped restriction on both players.
+-- Summon bans are the one family the core does NOT read off the value: the
+-- engine collects them with field::filter_player_effect and then calls the
+-- effect's *target*, e.g. is_player_can_spsummon ->
+--   if(!eff->target) return FALSE;  -- no target at all means a blanket ban
+--   check_condition(eff->target, 8) -- true means "forbidden"
+-- so a predicate passed as a value is never consulted and the action is banned
+-- outright. Use this for EFFECT_CANNOT_SUMMON, EFFECT_CANNOT_FLIP_SUMMON and
+-- EFFECT_CANNOT_SPECIAL_SUMMON; FieldRule stays right for the value-driven
+-- codes (EFFECT_CANNOT_ACTIVATE, EFFECT_DRAW_COUNT, EFFECT_IMMUNE_EFFECT, ...).
+-- predicate : function(e, card, player, ...) returning true to forbid.
+--             All three codes pass (effect, card, player) first, so one
+--             predicate can serve every summon kind.
+function M.PlayerRestriction(code, predicate)
+	local e = Effect.GlobalEffect()
+	e:SetType(EFFECT_TYPE_FIELD)
+	e:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e:SetCode(code)
+	e:SetTargetRange(1, 1)
+	e:SetTarget(predicate)
 	Duel.RegisterEffect(e, 0)
 	return e
 end

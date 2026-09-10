@@ -1,207 +1,85 @@
 {
-  "$comment": "Single source of truth linking the web-app mutation sheet (web-app/public/mutations.xlsx) to the EDOPro plugin. sheet_name matches the Name column exactly; script names the file in src/cores/, whose stem IS the core id. code is permanent - it is what a host types into Starting LP.",
-  "version": "0.4.0",
+  "$comment": "Single source of truth for the EDOPro plugin. sheet_name matches Loi.xlsx exactly; script is the stem under src/cores. Published LP codes are permanent and retired codes must never be reused.",
+  "version": "1.0.0",
+  "retired_codes": [
+    { "code": 1, "sheet_name": "Tốc Chiến Bạc" },
+    { "code": 2, "sheet_name": "Hạn Điền Bạc" },
+    { "code": 3, "sheet_name": "Tiết Kiệm Bạc" },
+    { "code": 4, "sheet_name": "Mỏng Manh Bạc" },
+    { "code": 5, "sheet_name": "Năng Lượng Bạc" },
+    { "code": 6, "sheet_name": "Giới Hạn Bạc" },
+    { "code": 7, "sheet_name": "Tốc Chiến Vàng" },
+    { "code": 8, "sheet_name": "Hạn Điền Vàng" },
+    { "code": 9, "sheet_name": "Tiết Kiệm Vàng" },
+    { "code": 10, "sheet_name": "Mỏng Manh Vàng" },
+    { "code": 11, "sheet_name": "Lực Hút Vàng" },
+    { "code": 12, "sheet_name": "Giới Hạn Vàng" },
+    { "code": 13, "sheet_name": "Tử Chiến" },
+    { "code": 14, "sheet_name": "(no sheet entry - handtrap lock)" },
+    { "code": 15, "sheet_name": "Nhất Kích" },
+    { "code": 16, "sheet_name": "Tay Không" },
+    { "code": 17, "sheet_name": "Trống Rỗng" },
+    { "code": 18, "sheet_name": "Phong Ấn" },
+    { "code": 19, "sheet_name": "Tuyệt Vọng" }
+  ],
+  "retired_scripts": [
+    "energy_surge", "extra_embargo", "first_blood", "high_friction",
+    "resource_starvation", "sealed_magic", "speed_blitz", "thrift",
+    "plan_ahead_of_time", "only_the_strong_survive", "raw_force_no_strategy",
+    "stop_hitting_me", "it_should_have_been_mine", "this_sound_familiar",
+    "there_can_be_only_one_kind", "keep_drawing", "leaking_vrain",
+    "strength_of_the_weak", "be_more_efficient", "droll_lock_limit",
+    "you_have_to_be_quick", "recycling", "verres_wand_silver",
+    "first_turn_advantage_silver", "you_can_only_use_once",
+    "create_your_own_victory", "this_card_is_trash",
+    "mirror_mirror_on_the_wall", "clash_of_the_titan", "unexpected_arrival",
+    "shared_pain", "what_is_it_gonna_be", "restricted_gambling",
+    "literally_just_mulligan", "once_punch", "back_from_the_grave",
+    "gift_from_your_enemy", "rock_paper_scissors", "yugih5_comeback",
+    "quick_play_owner_turn", "speed_duel_mentioned", "boss_is_always_boss",
+    "break_the_loop", "gambling_draw", "energy_dominate", "magic_consume_silver"
+  ],
   "cores": [
-    {
-      "sheet_name": "Tốc Chiến Bạc",
-      "code": 1,
-      "tier": "Bac",
-      "status": "partial",
-      "script": "speed_blitz",
-      "params": {
-        "lp": 6000
-      },
-      "room_settings": {
-        "time_limit": 120
-      },
-      "note": "LP enforced by script; the 120s clock is a room setting the host must pick."
-    },
-    {
-      "sheet_name": "Hạn Điền Bạc",
-      "code": 2,
-      "tier": "Bac",
-      "status": "implemented",
-      "script": "high_friction",
-      "params": {
-        "max_special_summons": 7
-      }
-    },
-    {
-      "sheet_name": "Tiết Kiệm Bạc",
-      "code": 3,
-      "tier": "Bac",
-      "status": "implemented",
-      "script": "thrift",
-      "params": {
-        "draw": 2
-      }
-    },
-    {
-      "sheet_name": "Mỏng Manh Bạc",
-      "code": 4,
-      "tier": "Bac",
-      "status": "implemented",
-      "script": "resource_starvation",
-      "params": {
-        "hand": 4
-      }
-    },
-    {
-      "sheet_name": "Năng Lượng Bạc",
-      "code": 5,
-      "tier": "Bac",
-      "status": "implemented",
-      "script": "energy_surge",
-      "params": {
-        "amount": 1000
-      },
-      "note": "Turn player recovers at their own Standby Phase."
-    },
-    {
-      "sheet_name": "Giới Hạn Bạc",
-      "code": 6,
-      "tier": "Bac",
-      "status": "implemented",
-      "script": "extra_embargo",
-      "params": {
-        "max_extra": 10
-      },
-      "note": "Enforced as an automatic game loss at startup, not a deck-editor block."
-    },
-    {
-      "sheet_name": "Tốc Chiến Vàng",
-      "code": 7,
-      "tier": "Vang",
-      "status": "partial",
-      "script": "speed_blitz",
-      "params": {
-        "lp": 4000
-      },
-      "room_settings": {
-        "time_limit": 60
-      },
-      "note": "LP enforced by script; the 60s clock is a room setting."
-    },
-    {
-      "sheet_name": "Hạn Điền Vàng",
-      "code": 8,
-      "tier": "Vang",
-      "status": "implemented",
-      "script": "high_friction",
-      "params": {
-        "max_special_summons": 5
-      }
-    },
-    {
-      "sheet_name": "Tiết Kiệm Vàng",
-      "code": 9,
-      "tier": "Vang",
-      "status": "implemented",
-      "script": "thrift",
-      "params": {
-        "draw": 0
-      }
-    },
-    {
-      "sheet_name": "Mỏng Manh Vàng",
-      "code": 10,
-      "tier": "Vang",
-      "status": "implemented",
-      "script": "resource_starvation",
-      "params": {
-        "hand": 3
-      }
-    },
-    {
-      "sheet_name": "Lực Hút Vàng",
-      "code": 11,
-      "tier": "Vang",
-      "status": "planned",
-      "script": "heavy_gravity",
-      "params": {
-        "min_main": 50
-      },
-      "mechanism": "EVENT_STARTUP validator: Duel.GetFieldGroupCount(p, LOCATION_DECK, 0) < min_main => Duel.Win(1-p). Same shape as extra_embargo."
-    },
-    {
-      "sheet_name": "Giới Hạn Vàng",
-      "code": 12,
-      "tier": "Vang",
-      "status": "implemented",
-      "script": "extra_embargo",
-      "params": {
-        "max_extra": 6
-      }
-    },
-    {
-      "sheet_name": "Tử Chiến",
-      "code": 13,
-      "tier": "KimCuong",
-      "status": "partial",
-      "script": "speed_blitz",
-      "params": {
-        "lp": 2000
-      },
-      "also_needs": [
-        "no_hand_effects"
-      ],
-      "room_settings": {
-        "time_limit": 30
-      },
-      "note": "LP enforced; 30s clock is a room setting; the handtrap ban needs the planned no_hand_effects core."
-    },
-    {
-      "sheet_name": "(no sheet entry - handtrap lock)",
-      "code": 14,
-      "tier": "KimCuong",
-      "status": "planned",
-      "script": "no_hand_effects",
-      "mechanism": "EFFECT_CANNOT_ACTIVATE with a value function rejecting re:GetHandler():IsLocation(LOCATION_HAND). Blocks every handtrap by position rather than by name, so no card list goes stale.",
-      "note": "Component of Tử Chiến and of the Old-School Clash format in Yêu cầu.txt."
-    },
-    {
-      "sheet_name": "Nhất Kích",
-      "code": 15,
-      "tier": "KimCuong",
-      "status": "implemented",
-      "script": "first_blood"
-    },
-    {
-      "sheet_name": "Tay Không",
-      "code": 16,
-      "tier": "KimCuong",
-      "status": "implemented",
-      "script": "resource_starvation",
-      "params": {
-        "hand": 1
-      }
-    },
-    {
-      "sheet_name": "Trống Rỗng",
-      "code": 17,
-      "tier": "KimCuong",
-      "status": "planned",
-      "script": "void_extra",
-      "mechanism": "EFFECT_CANNOT_SPECIAL_SUMMON with a value function rejecting cards whose previous location is LOCATION_EXTRA. Stopgap available today: extra_embargo with max_extra 0.",
-      "note": "Blocking the summon reads better than an instant loss, so it gets its own script."
-    },
-    {
-      "sheet_name": "Phong Ấn",
-      "code": 18,
-      "tier": "KimCuong",
-      "status": "implemented",
-      "script": "sealed_magic"
-    },
-    {
-      "sheet_name": "Tuyệt Vọng",
-      "code": 19,
-      "tier": "KimCuong",
-      "status": "planned",
-      "script": "no_special_summon",
-      "mechanism": "EFFECT_CANNOT_SPECIAL_SUMMON for both players. Stopgap available today: high_friction with max_special_summons 0."
-    }
+    { "sheet_name": "Plan Ahead of Time", "description": "2 người chơi bắt đầu với 0 lá, Skip Draw Phase và Add 2 card trong Deck lên tay trong mỗi Standby Phase", "code": 20, "tier": "Excel", "status": "implemented", "script": "20_plan_ahead_of_time", "params": { "standby_add": 2 } },
+    { "sheet_name": "Only The Strong Survie", "description": "Mỗi End Phase sẽ destroy 1 monster có sức công nhỏ nhất trên mỗi field", "code": 21, "tier": "Excel", "status": "implemented", "script": "21_only_the_strong_survive" },
+    { "sheet_name": "Raw force no strategy", "description": "Không được Set Card", "code": 22, "tier": "Excel", "status": "implemented", "script": "22_raw_force_no_strategy" },
+    { "sheet_name": "Stop hitting me", "description": "Mỗi turn chỉ có 1 monster tấn công", "code": 23, "tier": "Excel", "status": "implemented", "script": "23_stop_hitting_me" },
+    { "sheet_name": "It should has been mine", "description": "Mỗi Draw Phase, trước khi draw Mill 1 lá trên top Deck", "code": 24, "tier": "Excel", "status": "implemented", "script": "24_it_should_have_been_mine" },
+    { "sheet_name": "This sound familiar", "description": "Tất cả card trong Deck không được giống nhau", "code": 25, "tier": "Excel", "status": "implemented", "script": "25_this_sound_familiar" },
+    { "sheet_name": "There can be only one kind", "description": "Không được Summon monster cùng loại Triệu Hồi từ Extra Deck", "code": 26, "tier": "Excel", "status": "implemented", "script": "26_there_can_be_only_one_kind" },
+    { "sheet_name": "Keep drawing", "description": "Mỗi End Phase cả 2 sẽ Draw đến khi có 5 lá trên tay", "code": 27, "tier": "Excel", "status": "implemented", "script": "27_keep_drawing", "params": { "hand": 5 } },
+    { "sheet_name": "Leaking Vrain", "description": "Start game Summon 1 Link Monster trong Extra Deck", "code": 28, "tier": "Excel", "status": "implemented", "script": "28_leaking_vrain" },
+    { "sheet_name": "Strength of the weak", "description": "Monster với sức công thấp nhất sẽ ko bị ảnh hưởng bởi card effect, chỉ có hiệu lực nếu có từ 2 monster trở lên trên sân", "code": 29, "tier": "Excel", "status": "implemented", "script": "29_strength_of_the_weak" },
+    { "sheet_name": "Be more efficient", "description": "Mỗi người chơi chỉ có tối đa 3 monster trên sân và 3 Spell/Trap trên sân", "code": 30, "tier": "Excel", "status": "implemented", "script": "30_be_more_efficient", "params": { "monster_zones": 3, "spell_trap_zones": 3 } },
+    { "sheet_name": "Droll and Lock Bird is looking at you", "description": "Mỗi người chơi chỉ được add/draw 5 card mỗi lượt không tính card draw ở Draw Phase", "code": 31, "tier": "Excel", "status": "partial", "script": "31_droll_lock_limit", "params": { "max_cards": 5 }, "note": "Blocks further cards after five; a single effect that adds several cards can overshoot the remaining quota because the core exposes no pre-resolution card-count hook." },
+    { "sheet_name": "You have to be quick", "description": "Start game với 10000 LP và mỗi End Phase LP sẽ trở lại 10000", "code": 32, "tier": "Excel", "status": "implemented", "script": "32_you_have_to_be_quick", "params": { "lp": 10000 } },
+    { "sheet_name": "Recycling", "description": "End Phase tất cả card ở dưới mộ và banishment sẽ được shuffle lại vào Deck", "code": 33, "tier": "Excel", "status": "implemented", "script": "33_recycling" },
+    { "sheet_name": "Verre's Wand Bạc", "description": "Khi một quái thú chiến đấu, người chơi có thể tiết lộ 1 số lượng Spell bất kỳ từ tay để quái thú đó nhận 500 công ứng với mỗi lá Spell", "code": 34, "tier": "Excel", "status": "implemented", "script": "34_verres_wand_silver", "params": { "attack_per_spell": 500 } },
+    { "sheet_name": "First turn advantage bạc", "description": "Draw Phase đầu tiên của trận đấu chỉ rút 1 lá bài, trong lượt đầu tiên của bản thân, hiệu ứng và sự kích hoạt của các hiệu ứng do bản thân kích hoạt không thể bị ngăn chặn bởi đối thủ", "code": 35, "tier": "Excel", "status": "implemented", "script": "35_first_turn_advantage_silver", "operator_note": "keep the room's Draw Count per Turn at the default 1; ocgcore cannot lower a larger host value with EFFECT_DRAW_COUNT" },
+    { "sheet_name": "You can only use ONCE", "description": "Sau khi dùng 1 card/effect, banish tất cả copy của card đó trên tay và trong Deck Face-Down", "code": 36, "tier": "Excel", "status": "implemented", "script": "36_you_can_only_use_once" },
+    { "sheet_name": "Create your own Victory", "description": "Khi người chơi có đủ 3 copy của 5 lá bài ở trên sân, dưới mộ và face-up banishment, người chơi đó Win the Duel", "code": 37, "tier": "Excel", "status": "implemented", "script": "37_create_your_own_victory", "params": { "copies": 3, "names": 5 } },
+    { "sheet_name": "This card is trash", "description": "Negate effect của lá bài đầu tiên mỗi người activate mỗi turn", "code": 38, "tier": "Excel", "status": "implemented", "script": "38_this_card_is_trash" },
+    { "sheet_name": "Mirror Mirror on the Wall", "description": "Khi một monster được summon, summon 1 Token lên sân của đối phương có sức công bằng với sức công của monster đó", "code": 39, "tier": "Excel", "status": "implemented", "script": "39_mirror_mirror_on_the_wall" },
+    { "sheet_name": "Clash of the Titan", "description": "End Phase destroy tất cả monster trên sân và Summon 1 Token lên sân của người chơi đó, có sức công bằng sức công của tất cả monster bị destroy Token này không thể đem làm Material cho Summon hoặc Tribute và không bị ảnh hưởng bởi hiệu ứng ngoại trừ \"Clash of the Titan\"", "code": 40, "tier": "Excel", "status": "implemented", "script": "40_clash_of_the_titan" },
+    { "sheet_name": "Unexpected Arrival", "description": "Draw Phase, thay vì Draw a card, người chơi đó sẽ Summon 1 Monster Trong Deck", "code": 41, "tier": "Excel", "status": "implemented", "script": "41_unexpected_arrival" },
+    { "sheet_name": "Shared Pain", "description": "Mỗi khi người chơi nhận damage, đối phương của người chơi đó cũng sẽ nhận damage bằng với số đó", "code": 42, "tier": "Excel", "status": "implemented", "script": "42_shared_pain" },
+    { "sheet_name": "What is it gonna be?", "description": "End Phase cả 2 người chơi được set 1 Spell/Trap ngoại trừ Counter Trap từ trong Deck, Card này sẽ không bị ảnh hưởng bởi hiệu ứng", "code": 43, "tier": "Excel", "status": "implemented", "script": "43_what_is_it_gonna_be" },
+    { "sheet_name": "Restricted Gambling", "description": "Mỗi Draw Phase roll xúc xắc, cả turn mỗi người chỉ được activate VÀ Summon monster bằng với số Roll đó", "code": 44, "tier": "Excel", "status": "implemented", "script": "44_restricted_gambling" },
+    { "sheet_name": "Litterally just Mulligan", "description": "Mỗi Stanby Phase mỗi người chơi được quyền shuffle tất cả Card trên hand vào Deck và Draw lại bấy nhiêu card.", "code": 45, "tier": "Excel", "status": "implemented", "script": "45_literally_just_mulligan" },
+    { "sheet_name": "Once Punch", "description": "Khi monster đầu tiên tấn công mỗi Battle Phase, nhân đôi sức công của monster đó trong Damage Step", "code": 46, "tier": "Excel", "status": "implemented", "script": "46_once_punch" },
+    { "sheet_name": "Back From the Grave", "description": "Mỗi End Phase, mỗi người chơi Summon 1 Monster dưới mộ họ lên sân", "code": 47, "tier": "Excel", "status": "implemented", "script": "47_back_from_the_grave" },
+    { "sheet_name": "Gift from your Enemy", "description": "Mỗi Standby Phase, mỗi người sẽ chọn 1 Monster trong Deck họ và Summon nó lên sân đối phương", "code": 48, "tier": "Excel", "status": "implemented", "script": "48_gift_from_your_enemy" },
+    { "sheet_name": "Rock Paper Scissors", "description": "Monster không bị ảnh hưởng bởi Spell, Spell không bị ảnh hưởng bởi Trap, Trap không bị ảnh hưởng bởi Monster", "code": 49, "tier": "Excel", "status": "implemented", "script": "49_rock_paper_scissors" },
+    { "sheet_name": "yugiH5 Comeback", "description": "Không có BP, mỗi khi quái được triệu hồi có thể tấn công ngay lập tức. Tuy nhiên ở lượt đầu tiên sẽ không được quyền tấn công, lượt thứ 2 lượng ATK của quái giảm đi 1/2", "code": 50, "tier": "Excel", "status": "partial", "script": "50_yugih5_comeback", "note": "Immediate combat uses CalculateDamage, so it requires a face-up target and cannot reproduce direct attacks, attack declarations, or all normal attack legality/triggers outside the Battle Phase; turn-two ATK halving applies to monsters summoned that turn." },
+    { "sheet_name": "Fucking Quick-Play", "description": "Quick-play Spell không được active ở turn đối phương", "code": 51, "tier": "Excel", "status": "implemented", "script": "51_quick_play_owner_turn" },
+    { "sheet_name": "Speed-duel Mentioned?", "description": "Bàn đấu trở thành bàn đấu Speed Duel", "code": 52, "tier": "Excel", "status": "partial", "script": "52_speed_duel_mentioned", "room_settings": { "duel_mode": "speed" }, "note": "Lua cannot change duel flags or the field layout after duel creation; the host must select Speed Duel mode." },
+    { "sheet_name": "Boss is alway Boss", "description": "Monster có ATK cao nhất sẽ được thêm eff \"unaffected by other card effects\"", "code": 53, "tier": "Excel", "status": "implemented", "script": "53_boss_is_always_boss" },
+    { "sheet_name": "Break the Loop", "description": "Tất cả Continous S/T sẽ xuống mộ vào cuối lượt", "code": 54, "tier": "Excel", "status": "implemented", "script": "54_break_the_loop" },
+    { "sheet_name": "Gambling Gambling", "description": "Draw Phase sẽ tung 1 xúc xắc, cả 2 người draw số card bằng số xúc xắc tung được", "code": 55, "tier": "Excel", "status": "implemented", "script": "55_gambling_draw" },
+    { "sheet_name": "Energy Dominate", "description": "Tối đa 12 energy, Special Summon, Active Spell, Trap sẽ tốn 2 energy. Active Quick Effect, Quick-play Spell, Counter trap tốn 4 energy. (tính cả effect ' it become quick eff')", "code": 56, "tier": "Excel", "status": "implemented", "script": "56_energy_dominate", "params": { "max_energy": 12, "normal_cost": 2, "quick_cost": 4 }, "operator_note": "for energy chat set coreLogOutput=3 in config/system.conf (EDOPro labels script chat as Script Error)" },
+    { "sheet_name": "Magic consume bạc", "description": "Người chơi phải tiết lộ 1 ma pháp từ tay để kích hoạt hiệu ứng quái thú, mỗi ma pháp chỉ được tiết lộ tối đa 3 lần theo cách này", "code": 57, "tier": "Excel", "status": "implemented", "script": "57_magic_consume_silver", "params": { "max_reveals": 3 } }
   ],
   "lp_code_base": 1000000,
-  "lp_code_$comment": "Escape hatch past the 13 checkboxes. Starting LP is a uint32 that reaches the duel core untouched (OCG_Player.startingLP), so a host typing base+code into the Host window's Starting LP box selects any core in the library by number. The core then sets the real LP, defaulting to default_lp below.",
+  "lp_code_$comment": "The host types base+code into Starting LP. The bootstrap restores real LP before applying the selected catalogue entry.",
   "default_lp": 8000
 }

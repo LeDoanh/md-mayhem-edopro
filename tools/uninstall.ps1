@@ -53,15 +53,53 @@ function Get-Sha256([string]$path) {
     }
 }
 
-# --- Plugin folder ---------------------------------------------------------
-if (Test-Path $pluginDir) {
-    if ($PSCmdlet.ShouldProcess($pluginDir, "Remove plugin folder")) {
-        Remove-Item $pluginDir -Recurse -Force
-        Write-Host "remove expansions\script\mdmayhem\"
+# --- Files owned by this install -------------------------------------------
+$manifestPath = Join-Path $pluginDir ".mdmayhem-owned.json"
+$usedManifest = Test-Path $manifestPath
+if ($usedManifest) {
+    $gameRoot = [System.IO.Path]::GetFullPath($GamePath).TrimEnd('\') + '\'
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    $ownedFiles = @($manifest.files)
+    foreach ($ownedFile in $ownedFiles) {
+        $relative = $ownedFile.path.Replace('\', '/')
+        $allowed = $relative.StartsWith("expansions/script/mdmayhem/") -or
+                   $relative -eq "Mayhem-codes.txt" -or
+                   $relative.StartsWith("lflists/Mayhem_")
+        if (-not $allowed) {
+            throw "Unsafe target in ownership manifest: $relative"
+        }
+        $target = [System.IO.Path]::GetFullPath((Join-Path $GamePath ($ownedFile.path)))
+        if (-not $target.StartsWith($gameRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Unsafe path in ownership manifest: $($ownedFile.path)"
+        }
+        if (-not (Test-Path -LiteralPath $target)) { continue }
+        if (((Get-Sha256 $target) -replace '-', '') -ne $ownedFile.sha256) {
+            Write-Host "keep   $($ownedFile.path) (changed since install)"
+            continue
+        }
+        if ($PSCmdlet.ShouldProcess($target, "Remove owned Mayhem file")) {
+            Remove-Item -LiteralPath $target -Force
+            Write-Host "remove $($ownedFile.path)"
+            $removed++
+        }
+    }
+    if ($PSCmdlet.ShouldProcess($manifestPath, "Remove ownership manifest")) {
+        Remove-Item -LiteralPath $manifestPath -Force
         $removed++
     }
+} elseif (Test-Path $pluginDir) {
+    Write-Host "keep   expansions\script\mdmayhem\ (legacy install has no ownership manifest)"
 } else {
     Write-Host "skip   expansions\script\mdmayhem\ (not present)"
+}
+
+if ((Test-Path $pluginDir) -and
+    -not (Get-ChildItem $pluginDir -Force -ErrorAction SilentlyContinue)) {
+    if ($PSCmdlet.ShouldProcess($pluginDir, "Remove empty plugin folder")) {
+        Remove-Item -LiteralPath $pluginDir -Force
+        Write-Host "remove expansions\script\mdmayhem\ (left empty)"
+        $removed++
+    }
 }
 
 # install.ps1 creates expansions\script\ on the way in; a stock client has no
@@ -112,7 +150,8 @@ if (Test-Path $backupInit) {
 # --- Banlist ---------------------------------------------------------------
 foreach ($banlist in Get-ChildItem (Join-Path $repo "install") -Filter *.lflist.conf -ErrorAction SilentlyContinue) {
     $target = Join-Path $GamePath "lflists\$($banlist.Name)"
-    if (Test-Path $target) {
+    if ((-not $usedManifest) -and (Test-Path $target) -and
+        ((Get-Sha256 $target) -eq (Get-Sha256 $banlist.FullName))) {
         if ($PSCmdlet.ShouldProcess($target, "Remove banlist")) {
             Remove-Item $target -Force
             Write-Host "remove lflists\$($banlist.Name)"
@@ -123,8 +162,12 @@ foreach ($banlist in Get-ChildItem (Join-Path $repo "install") -Filter *.lflist.
 
 # --- Code list -------------------------------------------------------------
 $codeList = Join-Path $GamePath "Mayhem-codes.txt"
-if (Test-Path $codeList) {
-    if ($PSCmdlet.ShouldProcess($codeList, "Remove code list")) {
+if ((-not $usedManifest) -and (Test-Path $codeList)) {
+    $shippedCodeList = Join-Path $repo "install\generated\Mayhem-codes.txt"
+    if ((-not (Test-Path $shippedCodeList)) -or
+        ((Get-Sha256 $codeList) -ne (Get-Sha256 $shippedCodeList))) {
+        Write-Host "keep   Mayhem-codes.txt (changed or not ours)"
+    } elseif ($PSCmdlet.ShouldProcess($codeList, "Remove code list")) {
         Remove-Item $codeList -Force
         Write-Host "remove Mayhem-codes.txt"
         $removed++

@@ -9,18 +9,41 @@ The chosen core sets the real life points once the duel starts.
 A normal Starting LP is left alone, so casual and AI games are unaffected.
 
        LP  code  tier      status      name / requirements
-  1000001     1  Bac       PARTIAL     Tốc Chiến Bạc — set Time Limit=120s
-  1000002     2  Bac       IMPLEMENTED Hạn Điền Bạc
-  1000003     3  Bac       IMPLEMENTED Tiết Kiệm Bạc
-  1000004     4  Bac       IMPLEMENTED Mỏng Manh Bạc
-  1000005     5  Bac       IMPLEMENTED Năng Lượng Bạc
-  1000006     6  Bac       IMPLEMENTED Giới Hạn Bạc
-  1000007     7  Vang      PARTIAL     Tốc Chiến Vàng — set Time Limit=60s
-  1000008     8  Vang      IMPLEMENTED Hạn Điền Vàng
-  1000009     9  Vang      IMPLEMENTED Tiết Kiệm Vàng
-  1000010    10  Vang      IMPLEMENTED Mỏng Manh Vàng
-  1000012    12  Vang      IMPLEMENTED Giới Hạn Vàng
-  1000013    13  KimCuong  PARTIAL     Tử Chiến — set Time Limit=30s; missing: no_hand_effects
-  1000015    15  KimCuong  IMPLEMENTED Nhất Kích
-  1000016    16  KimCuong  IMPLEMENTED Tay Không
-  1000018    18  KimCuong  IMPLEMENTED Phong Ấn
+  1000020    20  Excel     IMPLEMENTED Plan Ahead of Time
+  1000021    21  Excel     IMPLEMENTED Only The Strong Survie
+  1000022    22  Excel     IMPLEMENTED Raw force no strategy
+  1000023    23  Excel     IMPLEMENTED Stop hitting me
+  1000024    24  Excel     IMPLEMENTED It should has been mine
+  1000025    25  Excel     IMPLEMENTED This sound familiar
+  1000026    26  Excel     IMPLEMENTED There can be only one kind
+  1000027    27  Excel     IMPLEMENTED Keep drawing
+  1000028    28  Excel     IMPLEMENTED Leaking Vrain
+  1000029    29  Excel     IMPLEMENTED Strength of the weak
+  1000030    30  Excel     IMPLEMENTED Be more efficient
+  1000031    31  Excel     PARTIAL     Droll and Lock Bird is looking at you — Blocks further cards after five; a single effect that adds several cards can overshoot the remaining quota because the core exposes no pre-resolution card-count hook.
+  1000032    32  Excel     IMPLEMENTED You have to be quick
+  1000033    33  Excel     IMPLEMENTED Recycling
+  1000034    34  Excel     IMPLEMENTED Verre's Wand Bạc
+  1000035    35  Excel     IMPLEMENTED First turn advantage bạc — keep the room's Draw Count per Turn at the default 1; ocgcore cannot lower a larger host value with EFFECT_DRAW_COUNT
+  1000036    36  Excel     IMPLEMENTED You can only use ONCE
+  1000037    37  Excel     IMPLEMENTED Create your own Victory
+  1000038    38  Excel     IMPLEMENTED This card is trash
+  1000039    39  Excel     IMPLEMENTED Mirror Mirror on the Wall
+  1000040    40  Excel     IMPLEMENTED Clash of the Titan
+  1000041    41  Excel     IMPLEMENTED Unexpected Arrival
+  1000042    42  Excel     IMPLEMENTED Shared Pain
+  1000043    43  Excel     IMPLEMENTED What is it gonna be?
+  1000044    44  Excel     IMPLEMENTED Restricted Gambling
+  1000045    45  Excel     IMPLEMENTED Litterally just Mulligan
+  1000046    46  Excel     IMPLEMENTED Once Punch
+  1000047    47  Excel     IMPLEMENTED Back From the Grave
+  1000048    48  Excel     IMPLEMENTED Gift from your Enemy
+  1000049    49  Excel     IMPLEMENTED Rock Paper Scissors
+  1000050    50  Excel     PARTIAL     yugiH5 Comeback — Immediate combat uses CalculateDamage, so it requires a face-up target and cannot reproduce direct attacks, attack declarations, or all normal attack legality/triggers outside the Battle Phase; turn-two ATK halving applies to monsters summoned that turn.
+  1000051    51  Excel     IMPLEMENTED Fucking Quick-Play
+  1000052    52  Excel     PARTIAL     Speed-duel Mentioned? — set Duel Mode=Speed; Lua cannot change duel flags or the field layout after duel creation; the host must select Speed Duel mode.
+  1000053    53  Excel     IMPLEMENTED Boss is alway Boss
+  1000054    54  Excel     IMPLEMENTED Break the Loop
+  1000055    55  Excel     IMPLEMENTED Gambling Gambling
+  1000056    56  Excel     IMPLEMENTED Energy Dominate — for energy chat set coreLogOutput=3 in config/system.conf (EDOPro labels script chat as Script Error)
+  1000057    57  Excel     IMPLEMENTED Magic consume bạc

@@ -3,7 +3,7 @@
 -- Per-match core selection does NOT happen here. The host picks a core in the
 -- client, by typing a code into the Host window's Starting LP box:
 --
---   Starting LP = 1000000 + <core code>      e.g. 1000008 = Han Dien Vang
+--   Starting LP = 1000000 + <core code>      e.g. 1000056 = Energy Dominate
 --
 -- Run `python tools/list-codes.py` for the current list. The catalogue lives in
 -- cores.json and is compiled to mayhem_catalogue.lua by build-catalogue.py.

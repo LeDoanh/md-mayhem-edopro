@@ -31,10 +31,22 @@ README = """MD Mayhem - EDOPro mutation cores
 
 Install
 -------
-IMPORTANT: check the EDOPro folder before extracting. If init.lua.bak already
-exists, move that older backup out of the game folder and keep it separately.
-Then, if init.lua exists, rename the current file to init.lua.bak. Extract only
-after this preflight; a zip extractor cannot make this decision safely.
+IMPORTANT: check the EDOPro folder before extracting.
+
+First install: if init.lua.bak already exists, move that older backup out of the
+game folder and keep it separately. If init.lua is not MD Mayhem's own loader,
+rename it to init.lua.bak before extraction.
+
+Upgrade: do NOT rename MD Mayhem's current init.lua again and do not replace the
+pre-Mayhem init.lua.bak. Overwrite the Mayhem loader directly. If init.lua also
+loads another tool, preserve that shared file and ensure it still loads
+mayhem_bootstrap.lua instead of replacing it blindly.
+
+For every upgrade, copy expansions/script/mdmayhem/mayhem_config.lua somewhere
+safe if you customized it, then delete the old expansions/script/mdmayhem
+directory before extracting. This removes retired core modules. Extract only
+after this preflight, then restore your saved mayhem_config.lua over the packaged
+default.
 
 Extract this zip over your EDOPro folder, keeping the folder structure. The
 files land as:
@@ -71,6 +83,12 @@ LAN mode -> Create Host -> Duel tab -> Starting LP:
 The chosen core sets the real life points once the duel starts. A normal
 Starting LP is left alone, so casual and AI games are unaffected. The full code
 list is in Mayhem-codes.txt.
+
+Energy Dominate starts each player at 12 energy and refills that player's energy
+to 12 at their Standby Phase. It shows the numeric balance and also writes a
+[MAYHEM ENERGY] line after every spend/refill. To see those lines in duel chat,
+set coreLogOutput=3 in config/system.conf; EDOPro labels script chat in red as
+"Script Error", even though the duel is working normally.
 
 Uninstall
 ---------

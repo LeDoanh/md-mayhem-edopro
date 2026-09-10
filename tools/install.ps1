@@ -44,6 +44,7 @@ $bootstrap = Join-Path $repo "install\init.lua"
 $installedInit = Join-Path $GamePath "init.lua"
 $backupInit = "$installedInit.bak"
 $needsInitBackup = $false
+$ownedPaths = @()
 
 # Preflight before writing anything. A fixed backup name is deliberate because
 # uninstall knows how to restore it, but an existing file at that name must
@@ -61,6 +62,14 @@ if (Test-Path $installedInit) {
 
 New-Item -ItemType Directory -Force -Path $pluginDir | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $GamePath "lflists") | Out-Null
+$manifestPath = Join-Path $pluginDir ".mdmayhem-owned.json"
+$priorOwnedHashes = @{}
+if (Test-Path -LiteralPath $manifestPath) {
+    $priorManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    foreach ($ownedFile in @($priorManifest.files)) {
+        $priorOwnedHashes[$ownedFile.path.Replace('\', '/')] = $ownedFile.sha256
+    }
+}
 
 # --- Lua modules -----------------------------------------------------------
 # Duel.LoadScript rejects names containing a path separator, so every module
@@ -94,13 +103,31 @@ foreach ($file in Get-ChildItem $generatedDir -Filter *.lua) {
     $sources += [pscustomobject]@{ Source = $file.FullName; Name = $file.Name }
 }
 
+# The plugin directory survives upgrades so the operator's config can survive too.
+# Remove only generated core modules that this version no longer ships; otherwise
+# a retired core remains loadable by name even though it vanished from the catalogue.
+$registry = Get-Content (Join-Path $repo "cores.json") -Raw | ConvertFrom-Json
+foreach ($retiredScript in $registry.retired_scripts) {
+    $retiredTarget = Join-Path $pluginDir "mayhem_core_$retiredScript.lua"
+    if (Test-Path -LiteralPath $retiredTarget) {
+        Remove-Item -LiteralPath $retiredTarget -Force
+        Write-Host "remove mayhem_core_$retiredScript.lua (retired core)"
+    }
+}
+
 foreach ($file in $sources) {
     $target = Join-Path $pluginDir $file.Name
     if ($file.Name -eq $configName -and (Test-Path $target) -and (-not $Force)) {
+        $configRelativePath = "expansions/script/mdmayhem/$configName"
+        $configHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
+        if ($priorOwnedHashes[$configRelativePath] -eq $configHash) {
+            $ownedPaths += $configRelativePath
+        }
         Write-Host "keep   $($file.Name) (existing config, use -Force to reset)"
         continue
     }
     Copy-Item $file.Source $target -Force
+    $ownedPaths += "expansions/script/mdmayhem/$($file.Name)"
     Write-Host "copy   $($file.Name)"
 }
 
@@ -133,6 +160,7 @@ if (Test-Path $expansionStrings) {
 # --- Code list -------------------------------------------------------------
 $codeList = Join-Path $generatedDir "Mayhem-codes.txt"
 Copy-Item $codeList (Join-Path $GamePath "Mayhem-codes.txt") -Force
+$ownedPaths += "Mayhem-codes.txt"
 Write-Host "copy   Mayhem-codes.txt"
 
 # --- Duel entry point ------------------------------------------------------
@@ -146,9 +174,28 @@ Write-Host "copy   init.lua"
 # --- Banlists --------------------------------------------------------------
 $banlists = Get-ChildItem (Join-Path $repo "install") -Filter *.lflist.conf -ErrorAction SilentlyContinue
 foreach ($banlist in $banlists) {
-    Copy-Item $banlist.FullName (Join-Path $GamePath "lflists\$($banlist.Name)") -Force
+    $banlistTarget = Join-Path $GamePath "lflists\$($banlist.Name)"
+    Copy-Item $banlist.FullName $banlistTarget -Force
+    $ownedPaths += "lflists/$($banlist.Name)"
     Write-Host "copy   lflists\$($banlist.Name)"
 }
+
+# Record exactly what this run wrote. Uninstall uses both the path and hash, so
+# it never deletes a foreign or subsequently edited file merely because it sits
+# in the plugin directory or happens to share one of our filenames.
+$owned = foreach ($relativePath in $ownedPaths) {
+    $absolutePath = Join-Path $GamePath $relativePath
+    [pscustomobject]@{
+        path = $relativePath.Replace('\', '/')
+        sha256 = (Get-FileHash -LiteralPath $absolutePath -Algorithm SHA256).Hash
+    }
+}
+[System.IO.File]::WriteAllText(
+    $manifestPath,
+    ([pscustomobject]@{ files = @($owned) } | ConvertTo-Json -Depth 4),
+    (New-Object System.Text.UTF8Encoding($false))
+)
+Write-Host "write  expansions\script\mdmayhem\.mdmayhem-owned.json"
 
 Write-Host ""
 Write-Host "Installed to $GamePath"

@@ -27,6 +27,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -81,9 +82,15 @@ def write_code_list(data: dict, base: int) -> None:
         room_settings = core.get("room_settings", {})
         if "time_limit" in room_settings:
             requirements.append(f"set Time Limit={room_settings['time_limit']}s")
+        if "duel_mode" in room_settings:
+            requirements.append(f"set Duel Mode={room_settings['duel_mode'].title()}")
         missing = core.get("missing_dependencies", [])
         if missing:
             requirements.append("missing: " + ", ".join(missing))
+        if core["status"] == "partial" and core.get("note"):
+            requirements.append(core["note"])
+        if core.get("operator_note"):
+            requirements.append(core["operator_note"])
         suffix = f" — {'; '.join(requirements)}" if requirements else ""
         lines.append(f"{base + core['code']:>9}  {core['code']:>4}  "
                      f"{core['tier']:<9} {core['status'].upper():<11} "
@@ -100,7 +107,13 @@ def main() -> int:
     default_lp = data["default_lp"]
 
     seen: dict[int, str] = {}
+    for retired in data.get("retired_codes", []):
+        code, name = retired["code"], retired["sheet_name"]
+        if code in seen:
+            raise SystemExit(f"retired code {code} listed more than once")
+        seen[code] = f"{name} (retired)"
     entries: list[str] = []
+    aliases: list[str] = []
     skipped: list[str] = []
 
     for core in data["cores"]:
@@ -114,21 +127,28 @@ def main() -> int:
             skipped.append(f"{code} {name}")
             continue
         script = core["script"]
+        if not script.startswith(f"{code}_"):
+            raise SystemExit(
+                f"'{name}' must use a code-prefixed script id starting with '{code}_'"
+            )
         if script not in known:
             raise SystemExit(
                 f"'{name}' references '{script}', but src/cores/{script}.lua does not exist"
             )
-        cores_table = f"{script} = {lua_params(core.get('params', {}))}"
+        cores_table = f"[{lua_value(script)}] = {lua_params(core.get('params', {}))}"
         missing_dependencies: list[str] = []
         for extra in core.get("also_needs", []):
             if extra in known:
-                cores_table += f", {extra} = {{}}"
+                cores_table += f", [{lua_value(extra)}] = {{}}"
             else:
                 missing_dependencies.append(extra)
         if missing_dependencies and status == "implemented":
             missing = ", ".join(missing_dependencies)
             raise SystemExit(f"'{name}' is implemented but is missing: {missing}")
         core["missing_dependencies"] = missing_dependencies
+        legacy_id = re.sub(r"^\d+_", "", script)
+        if legacy_id != script:
+            aliases.append(f"\t[{lua_value(legacy_id)}] = {lua_value(script)},")
         entries.append(
             f"\t[{code}] = {{ label = {lua_value(name)}, cores = {{ {cores_table} }} }},"
         )
@@ -142,6 +162,12 @@ def main() -> int:
         f"MAYHEM_LP_CODE_BASE = {base}",
         f"MAYHEM_DEFAULT_LP = {default_lp}",
         f"MAYHEM_CATALOGUE_VERSION = {lua_value(data['version'])}",
+        "",
+        "-- Backward compatibility for operator configs written before core IDs",
+        "-- gained their numeric filename prefix.",
+        "MAYHEM_CORE_ALIASES = {",
+        *aliases,
+        "}",
         "",
         "MAYHEM_CATALOGUE = {",
         *entries,
