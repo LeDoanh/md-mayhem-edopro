@@ -39,8 +39,10 @@ Restart EDOPro afterwards — it scans for the plugin only at startup.
 python tools/make-package.py     # builds dist/mdmayhem-<version>.zip
 ```
 
-Extract the zip over the EDOPro folder, keeping the structure. That is the whole
-install; the plugin is plain Lua with nothing platform-specific.
+Before extracting, check the EDOPro folder. If `init.lua.bak` already exists,
+move that older backup out of the game folder and keep it separately. Then, if
+`init.lua` exists, rename the current file to `init.lua.bak`. Extract the zip
+only after that preflight; the archive cannot make this decision itself.
 
 ## Use
 
@@ -59,18 +61,18 @@ The full list is written to `Mayhem-codes.txt` next to `EDOPro.exe`, or run
 
 | Starting LP | Core | Tier | Rule |
 | --- | --- | --- | --- |
-| 1000001 | Tốc Chiến Bạc | Bạc | 6000 starting LP |
+| 1000001 | Tốc Chiến Bạc (partial) | Bạc | 6000 starting LP; host sets Time Limit 120s |
 | 1000002 | Hạn Điền Bạc | Bạc | max 7 Special Summons per turn |
 | 1000003 | Tiết Kiệm Bạc | Bạc | draw 2 per turn |
 | 1000004 | Mỏng Manh Bạc | Bạc | opening hand of 4 |
 | 1000005 | Năng Lượng Bạc | Bạc | turn player recovers 1000 LP each Standby |
 | 1000006 | Giới Hạn Bạc | Bạc | Extra Deck of at most 10 |
-| 1000007 | Tốc Chiến Vàng | Vàng | 4000 starting LP |
+| 1000007 | Tốc Chiến Vàng (partial) | Vàng | 4000 starting LP; host sets Time Limit 60s |
 | 1000008 | Hạn Điền Vàng | Vàng | max 5 Special Summons per turn |
 | 1000009 | Tiết Kiệm Vàng | Vàng | no draw for turn |
 | 1000010 | Mỏng Manh Vàng | Vàng | opening hand of 3 |
 | 1000012 | Giới Hạn Vàng | Vàng | Extra Deck of at most 6 |
-| 1000013 | Tử Chiến | Kim Cương | 2000 starting LP |
+| 1000013 | Tử Chiến (partial) | Kim Cương | 2000 starting LP; host sets Time Limit 30s; handtrap lock not implemented |
 | 1000015 | Nhất Kích | Kim Cương | first player to take battle damage loses |
 | 1000016 | Tay Không | Kim Cương | opening hand of 1 |
 | 1000018 | Phong Ấn | Kim Cương | Spell Cards cannot be activated |

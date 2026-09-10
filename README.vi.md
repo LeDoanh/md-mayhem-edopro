@@ -40,8 +40,10 @@ EDOPro** — nó chỉ quét plugin lúc khởi động.
 python tools/make-package.py     # tạo dist/mdmayhem-<version>.zip
 ```
 
-Giải nén đè lên thư mục EDOPro, giữ nguyên cấu trúc. Vậy là xong; plugin thuần
-Lua, không có gì phụ thuộc hệ điều hành.
+Trước khi giải nén, kiểm tra thư mục EDOPro. Nếu đã có `init.lua.bak`, chuyển
+backup cũ đó ra ngoài thư mục game và giữ riêng. Sau đó, nếu có `init.lua`, đổi
+tên file hiện tại thành `init.lua.bak`. Chỉ giải nén khi đã làm xong bước này;
+file zip không thể tự quyết định việc backup một cách an toàn.
 
 ## Cách dùng
 
@@ -60,18 +62,18 @@ Danh sách đầy đủ nằm ở `Mayhem-codes.txt` cạnh `EDOPro.exe`, hoặc
 
 | Starting LP | Lõi | Cấp | Luật |
 | --- | --- | --- | --- |
-| 1000001 | Tốc Chiến Bạc | Bạc | LP khởi đầu 6000 |
+| 1000001 | Tốc Chiến Bạc (chưa đủ) | Bạc | LP khởi đầu 6000; host đặt Time Limit 120 giây |
 | 1000002 | Hạn Điền Bạc | Bạc | tối đa 7 lần Special Summon mỗi lượt |
 | 1000003 | Tiết Kiệm Bạc | Bạc | rút 2 lá mỗi lượt |
 | 1000004 | Mỏng Manh Bạc | Bạc | bài khởi đầu 4 lá |
 | 1000005 | Năng Lượng Bạc | Bạc | người đến lượt hồi 1000 LP mỗi Standby |
 | 1000006 | Giới Hạn Bạc | Bạc | Extra Deck tối đa 10 lá |
-| 1000007 | Tốc Chiến Vàng | Vàng | LP khởi đầu 4000 |
+| 1000007 | Tốc Chiến Vàng (chưa đủ) | Vàng | LP khởi đầu 4000; host đặt Time Limit 60 giây |
 | 1000008 | Hạn Điền Vàng | Vàng | tối đa 5 lần Special Summon mỗi lượt |
 | 1000009 | Tiết Kiệm Vàng | Vàng | không được rút bài đầu lượt |
 | 1000010 | Mỏng Manh Vàng | Vàng | bài khởi đầu 3 lá |
 | 1000012 | Giới Hạn Vàng | Vàng | Extra Deck tối đa 6 lá |
-| 1000013 | Tử Chiến | Kim Cương | LP khởi đầu 2000 |
+| 1000013 | Tử Chiến (chưa đủ) | Kim Cương | LP 2000; host đặt Time Limit 30 giây; chưa có khóa handtrap |
 | 1000015 | Nhất Kích | Kim Cương | ai nhận sát thương chiến đấu trước thì thua |
 | 1000016 | Tay Không | Kim Cương | bài khởi đầu 1 lá |
 | 1000018 | Phong Ấn | Kim Cương | cấm kích hoạt Spell |

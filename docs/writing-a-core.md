@@ -208,8 +208,12 @@ pointing at the same script:
   `build-catalogue.py` reads the folder and fails if the file is missing.
 - `status: "planned"` documents a core that has no script yet. It is skipped by
   the generator and its code stays reserved.
+- `status: "partial"` keeps a selectable entry while marking it prominently in
+  `Mayhem-codes.txt`; any manual room settings and missing component cores are
+  printed beside it so a host cannot mistake it for a fully enforced rule.
 - `also_needs: ["other_core"]` applies a second core with the same entry, for
-  mutations that are a composite.
+  mutations that are a composite. A missing component is allowed only while the
+  entry is `partial`; an `implemented` entry fails catalogue generation.
 
 ## Finding an effect code you do not know
 

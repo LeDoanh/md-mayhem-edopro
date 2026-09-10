@@ -154,7 +154,11 @@ Everything `tools/install.ps1` writes, and what `tools/uninstall.ps1` takes back
 | `Mayhem-codes.txt` | the printable code list, beside `EDOPro.exe` |
 | `expansions/strings.conf` | not written any more. Both scripts strip a `# >>> MD Mayhem` block left by older versions and delete the file if nothing else was in it |
 
-`uninstall.ps1` supports `-WhatIf` for a dry run and is idempotent.
+`uninstall.ps1` supports `-WhatIf` for a dry run and is idempotent. If another
+tool replaces `init.lua` after Mayhem was installed, uninstall preserves both
+that newer file and `init.lua.bak` instead of overwriting either one. Ownership
+requires an exact hash match with the shipped entry point; merely mentioning
+`mayhem_bootstrap.lua` is not enough because a shared loader may mention it too.
 
 Neither script hardcodes a game folder. `tools/resolve-game-path.ps1` takes an
 explicit `-GamePath`, else the path remembered in `<repo>/.game-path`, else it
@@ -179,6 +183,11 @@ The selection mechanism is platform-independent:
   the folder is app-specific rather than a fixed path.
 - Filenames are all lowercase, which matters on case-sensitive filesystems.
 
+The portable zip cannot inspect its extraction target. Before extracting it, a
+host moves any pre-existing `init.lua.bak` out of the game folder and preserves
+it separately, then renames the current root `init.lua` to `init.lua.bak`. The
+packaged README carries the same preflight and restoration instructions.
+
 `python tools/make-package.py` builds `dist/mdmayhem-<version>.zip` laid out
 exactly as the files sit in the game folder; extracting it over that folder is a
 complete install, verified by wiping the Windows client and installing from the
@@ -192,11 +201,10 @@ manager can reach it without a PC, is untested here.
 `lua tools/test-cores.lua` runs the real bootstrap against stub engine globals,
 loading the client's actual `constant.lua` so the assertions use real effect
 numbers. It proves wiring, not engine acceptance — that still needs one hosted
-duel (an AI game is enough) per new effect code. `MAYHEM.Log` writes `[MAYHEM]` lines to
-`<game>\error.log` for after-the-fact checks.
+duel (an AI game is enough) per new effect code. When `debug = true`,
+`MAYHEM.Log` writes `[MAYHEM]` lines to `<game>\error.log` for after-the-fact
+checks; `run-duel.py` enables debug in its synthetic config by default.
 
 ## Open questions
 
-- Whether `Debug.ShowHint` renders acceptably mid-startup for both players, or
-  whether the announce banner is better deferred to the first Standby Phase.
 - The Android data folder, and whether a file manager can reach it without a PC.
