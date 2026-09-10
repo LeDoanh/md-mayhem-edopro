@@ -94,6 +94,7 @@ All of these live on the global `MAYHEM` table, from `src/runtime/mayhem_engine.
 | `MAYHEM.FieldRule(code, value, player_target)` | a permanent rule on both players |
 | `MAYHEM.PlayerRestriction(code, predicate)` | a summon ban, whose predicate the core reads as a *target* |
 | `MAYHEM.OnEvent(event, op, countlimit)` | a duel-wide trigger |
+| `MAYHEM.OnPhase(phase, op)` | work at the start of a phase — the only safe way to hook one |
 | `MAYHEM.OnStartup(op)` | run once before the opening hands are drawn |
 | `MAYHEM.SetPlayerRules{ lp=, hand=, draw= }` | starting LP / opening hand / per-turn draw — **startup only** |
 | `MAYHEM.Log(msg)` | progress note; silent unless `debug = true` in the config |
@@ -151,10 +152,14 @@ predicate can serve all three codes.
 **Something every turn** — `47_back_from_the_grave`
 
 ```lua
-MAYHEM.OnEvent(EVENT_PHASE + PHASE_STANDBY, function()
+MAYHEM.OnPhase(PHASE_END, function()
     -- select and Special Summon one legal monster from each player's GY
 end)
 ```
+
+Always `OnPhase`, never `OnEvent(EVENT_PHASE + PHASE_x, ...)` — see the trap
+list. The op runs once per phase, for whichever player's turn it is, so loop
+over both players yourself when the rule is symmetric.
 
 **An alternate win condition** — `37_create_your_own_victory`
 
@@ -307,6 +312,25 @@ to bite.
   Multiplayer runs on the remote server, where the plugin does not exist and
   cannot even report that it is missing. Solo mode takes its LP from the puzzle
   script, so it is not a valid test either.
+- **`EVENT_PHASE` turns a core's rule into a prompt, and crashes WindBot.**
+  `Processors::PhaseEvent` collects every continuous effect listening on
+  `EVENT_PHASE + phase` into `core.select_chains`. A lone entry is auto-selected,
+  which is why this looks fine in testing — but as soon as any card also
+  triggers that phase, the engine asks the player to choose between them, so the
+  mutation rule becomes declinable *and* `MSG_SELECT_CHAIN` has to name the
+  effect's card. A core has no card: its effects hang off the field's
+  `temp_card`, whose location is `0`, and WindBot's `Duel.GetCard` returns null
+  for that, then dereferences it (`NullReferenceException` in `OnSelectChain`,
+  which kills the AI mid-duel). Use `MAYHEM.OnPhase`, which hooks
+  `EVENT_PHASE_START` — an instant event that resolves automatically and is
+  explicitly skipped when the engine builds trigger chains. `OnEvent` redirects
+  an `EVENT_PHASE` code and warns rather than leaving the rule broken.
+- **`PHASE_BATTLE` has no start event.** Every other phase raises
+  `EVENT_PHASE_START + PHASE_*`; `PHASE_BATTLE` is the marker for the *end* of
+  the Battle Phase, and `PHASE_BATTLE_START` is what opens it. A per-Battle-Phase
+  reset hooked on `PHASE_BATTLE` never fires — it cost `46_once_punch` its reset,
+  so only the duel's first attacker was boosted. `OnPhase` substitutes
+  `PHASE_BATTLE_START` and warns.
 - **A restriction on the wrong callback bans the action outright.** The engine
   collects the summon bans with `field::filter_player_effect` and then evaluates
   the effect's *target*: `if(!eff->target) return FALSE` means an effect with no

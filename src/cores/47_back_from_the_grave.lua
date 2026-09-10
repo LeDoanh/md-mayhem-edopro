@@ -1,7 +1,7 @@
 -- Back From the Grave - each player revives one legal monster every End Phase.
 MAYHEM.Register("47_back_from_the_grave", {
 	apply = function()
-		MAYHEM.OnEvent(EVENT_PHASE + PHASE_END, function(e)
+		MAYHEM.OnPhase(PHASE_END, function(e)
 			for player = 0, 1 do
 				local function legal(card)
 					return card:IsType(TYPE_MONSTER)

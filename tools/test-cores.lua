@@ -242,7 +242,7 @@ end
 tests["plan ahead adds exactly two cards for each player at standby"] = function()
 	run({ enabled = { "20_plan_ahead_of_time" } })
 	recorder.matching_count = 8
-	fire_all(EVENT_PHASE + PHASE_STANDBY, 0)
+	fire_all(EVENT_PHASE_START + PHASE_STANDBY, 0)
 	local selected, moved = calls("Duel.SelectMatchingCard"), calls("Duel.SendtoHand")
 	assert(#selected == 2 and #moved == 2, "both players must tutor")
 	assert(selected[1].args[6] == 2 and selected[1].args[7] == 2, "tutor must select exactly two")
@@ -258,7 +258,7 @@ tests["only the strong destroys one lowest-ATK monster on each field"] = functio
 		group(3, { monster(1000), monster(1000), monster(2500) }),
 		group(2, { monster(500), monster(2000) }),
 	}
-	fire_all(EVENT_PHASE + PHASE_END, 0)
+	fire_all(EVENT_PHASE_START + PHASE_END, 0)
 	local destroyed = calls("Duel.Destroy")
 	assert(#destroyed == 2, "each field must lose one monster")
 	assert(destroyed[1].args[1]:GetCount() == 1 and destroyed[2].args[1]:GetCount() == 1,
@@ -330,7 +330,7 @@ tests["keep drawing refills both hands to five"] = function()
 	run({ enabled = { "27_keep_drawing" } })
 	recorder.field_groups = { group(2), group(4) }
 	recorder.deck_counts = { 2, 40 }
-	fire_all(EVENT_PHASE + PHASE_END, 0)
+	fire_all(EVENT_PHASE_START + PHASE_END, 0)
 	local draws = calls("Duel.Draw")
 	assert(#draws == 2 and draws[1].args[2] == 2 and draws[2].args[2] == 1,
 		"refill must clamp to the cards available in Deck")
@@ -399,7 +399,7 @@ tests["mirror and titan register summon and End Phase hooks"] = function()
 	run({ enabled = { "39_mirror_mirror_on_the_wall", "40_clash_of_the_titan" } })
 	assert(effect_with(EVENT_SUMMON_SUCCESS) and effect_with(EVENT_FLIP_SUMMON_SUCCESS), "mirror summon hooks missing")
 	assert(#effects_with(EVENT_SPSUMMON_SUCCESS) >= 1, "mirror Special Summon hook missing")
-	assert(effect_with(EVENT_PHASE + PHASE_END), "Titan End Phase hook missing")
+	assert(effect_with(EVENT_PHASE_START + PHASE_END), "Titan End Phase hook missing")
 end
 
 tests["arrival pain set gambling and mulligan hooks register"] = function()
@@ -437,7 +437,7 @@ end
 
 tests["punch grave gift RPS and comeback hooks register"] = function()
 	run({ enabled = { "46_once_punch", "47_back_from_the_grave", "48_gift_from_your_enemy", "49_rock_paper_scissors", "50_yugih5_comeback" } })
-	assert(effect_with(EVENT_PHASE_START + PHASE_BATTLE), "Battle Phase reset missing")
+	assert(effect_with(EVENT_PHASE_START + PHASE_BATTLE_START), "Battle Phase reset missing")
 	assert(#effects_with(EFFECT_IMMUNE_EFFECT) == 3, "RPS needs three immunity rules")
 	assert(effect_with(EFFECT_SKIP_BP), "Comeback must remove the normal Battle Phase")
 end
@@ -496,6 +496,42 @@ tests["energy starts at twelve spends two or four and refreshes the turn player"
 	summon.operation(summon, 0)
 	assert(calls("Debug.Message")[8].args[1]:find("6/12", 1, true),
 		"a negated summon must release the group guard for the next action")
+end
+
+tests["no core listens on EVENT_PHASE"] = function()
+	-- Processors::PhaseEvent collects continuous effects hooked on EVENT_PHASE +
+	-- phase into select_chains. Ours belong to no card, so as soon as anything
+	-- else triggers in the same phase the player is asked to choose between them
+	-- and MSG_SELECT_CHAIN ships a card at location 0, which crashes WindBot in
+	-- OnSelectChain. EVENT_PHASE_START resolves automatically instead.
+	local ids = {}
+	for _, entry in pairs(MAYHEM_CATALOGUE) do
+		for id in pairs(entry.cores or {}) do table.insert(ids, id) end
+	end
+	assert(#ids == 38, "expected all 38 catalogue cores, found " .. #ids)
+	for _, id in ipairs(ids) do
+		run({ enabled = { id } })
+		for _, effect in ipairs(recorder.effects) do
+			local code = effect.code or 0
+			assert(code < EVENT_PHASE or code >= EVENT_PHASE + 0x1000,
+				id .. " hooks EVENT_PHASE; use MAYHEM.OnPhase")
+		end
+		-- OnEvent redirects EVENT_PHASE rather than leaving the rule broken, so
+		-- the effect code above cannot betray a core that asked for it. The
+		-- warning can: nothing should warn merely by being loaded.
+		local warning = called("Debug.Message")
+		assert(not warning, id .. " warned while loading: " .. tostring(warning and warning.args[1]))
+	end
+end
+
+tests["OnEvent refuses EVENT_PHASE loudly and OnPhase fixes PHASE_BATTLE"] = function()
+	run({ enabled = {} })
+	MAYHEM.OnEvent(EVENT_PHASE + PHASE_END, function() end)
+	assert(effect_with(EVENT_PHASE_START + PHASE_END), "EVENT_PHASE was not redirected")
+	assert(called("Debug.Message"), "the redirect must be reported, not silent")
+	MAYHEM.OnPhase(PHASE_BATTLE, function() end)
+	assert(effect_with(EVENT_PHASE_START + PHASE_BATTLE_START),
+		"PHASE_BATTLE raises no start event and must fall back to PHASE_BATTLE_START")
 end
 
 tests["catalogue code 20 applies Plan Ahead of Time"] = function()

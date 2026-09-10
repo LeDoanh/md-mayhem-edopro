@@ -1,7 +1,7 @@
 -- Litterally just Mulligan - optionally recycle the whole hand at each Standby Phase.
 MAYHEM.Register("45_literally_just_mulligan", {
 	apply = function()
-		MAYHEM.OnEvent(EVENT_PHASE + PHASE_STANDBY, function()
+		MAYHEM.OnPhase(PHASE_STANDBY, function()
 			for player = 0, 1 do
 				local hand = Duel.GetFieldGroup(player, LOCATION_HAND, 0)
 				local count = #hand

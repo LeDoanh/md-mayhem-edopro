@@ -65,7 +65,7 @@ This is why the plugin needs no custom cards, no `.cdb` rows and no deck slot.
 | Max Special Summons per turn | `EFFECT_SPSUMMON_COUNT_LIMIT` + `Duel.EnableGlobalFlag(GLOBALFLAG_SPSUMMON_COUNT)` | yes — the core blocks the summon itself |
 | Ban a card *type* from activating | `EFFECT_CANNOT_ACTIVATE` with a value function | yes |
 | Ban handtraps | `EFFECT_CANNOT_ACTIVATE` filtered on `LOCATION_HAND` | yes, and it never goes stale |
-| Periodic LP swing | `EVENT_PHASE + PHASE_STANDBY` trigger + `Duel.Recover` | yes |
+| Periodic LP swing | `EVENT_PHASE_START + PHASE_STANDBY` trigger + `Duel.Recover` | yes — `EVENT_PHASE` must not be used, see below |
 | Alternate win condition | `EVENT_BATTLE_DAMAGE` trigger + `Duel.Win` | yes |
 | Deck-size limits (Extra ≤ N, Main ≥ N) | deck validation is client-side and not extensible; enforced instead as a startup check that ends the game | partially — after the duel starts, not in the deck editor |
 | Ban specific cards | `lflists/*.lflist.conf`, chosen per room | yes |
@@ -74,6 +74,39 @@ This is why the plugin needs no custom cards, no `.cdb` rows and no deck slot.
 The original tournament brief assumed manual counting and replay review for the
 Special-Summon quota. That is unnecessary: `EFFECT_SPSUMMON_COUNT_LIMIT` is an
 engine rule, so an over-quota summon simply cannot be declared.
+
+### Why a core hooks phases through `EVENT_PHASE_START`
+
+A core's effects belong to no card: `Effect.GlobalEffect` hands them the field's
+`temp_card`, whose location is `0`. That is invisible for a rule the engine only
+evaluates, but not for one it has to *offer*.
+
+`Processors::PhaseEvent` (`processor.cpp:328`) pushes every continuous effect
+listening on `EVENT_PHASE + phase` into `core.select_chains`. With one entry and
+nothing else triggering, `processor.cpp:424` auto-selects it and the rule just
+runs — which is why this shape survives casual testing. With anything else in
+that phase the engine emits `Processors::SelectChain`, and `playerop.cpp:489`
+writes `peffect->get_handler()->get_info_location()` into `MSG_SELECT_CHAIN`.
+Two things then go wrong: the mutation rule is presented as a choice the player
+can decline, and the packet names a card at location `0`. WindBot's
+`Duel.GetCard` has no case for that location, returns null, and
+`GameBehavior.OnSelectChain` dereferences it:
+
+```
+Tick Error: System.NullReferenceException
+   at WindBot.Game.GameBehavior.OnSelectChain(BinaryReader packet)
+```
+
+`EVENT_PHASE_START + PHASE_*` avoids both. It is raised straight after
+`MSG_NEW_PHASE` and drained by `process_instant_event`, and `processor.cpp:1218`
+skips the whole `EVENT_PHASE_START` band when it builds trigger chains, so the
+effect resolves as a continuous chain with nothing to select. `MAYHEM.OnPhase`
+is the only phase hook a core should use.
+
+One gap in that band: `PHASE_BATTLE` never raises a start event. The Battle
+Phase is opened by `EVENT_PHASE_START + PHASE_BATTLE_START`
+(`processor.cpp:3482`); `PHASE_BATTLE` only gets the `PhaseEvent` window that
+closes it.
 
 ### Which callback the core reads a restriction from
 

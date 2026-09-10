@@ -96,7 +96,8 @@ Helpers in `src/runtime/mayhem_engine.lua`:
 | --- | --- |
 | `MAYHEM.FieldRule(code, value, player_target)` | permanent rule on both players |
 | `MAYHEM.PlayerRestriction(code, predicate)` | summon bans - the engine reads these off the effect's target, not its value |
-| `MAYHEM.OnEvent(event, op, countlimit)` | duel-wide trigger (`EVENT_PHASE + PHASE_*` allowed) |
+| `MAYHEM.OnEvent(event, op, countlimit)` | duel-wide trigger (never `EVENT_PHASE + PHASE_*` - it becomes a declinable prompt and crashes WindBot) |
+| `MAYHEM.OnPhase(phase, op)` | work at the start of a phase; the only safe way to hook one |
 | `MAYHEM.OnStartup(op)` | runs once before opening hands are drawn |
 | `MAYHEM.SetPlayerRules{ lp=, hand=, draw= }` | starting LP / opening hand / per-turn draw; **startup only** |
 | `MAYHEM.Log(msg)` | progress note, only when `debug` is on in the config |

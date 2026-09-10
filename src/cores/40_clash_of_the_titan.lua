@@ -2,7 +2,7 @@
 MAYHEM.Register("40_clash_of_the_titan", {
 	apply = function()
 		Duel.LoadScript("mayhem_token_codes.lua")
-		MAYHEM.OnEvent(EVENT_PHASE + PHASE_END, function()
+		MAYHEM.OnPhase(PHASE_END, function()
 			local player = Duel.GetTurnPlayer()
 			local monsters = Duel.GetFieldGroup(0, LOCATION_MZONE, LOCATION_MZONE)
 			local attacks, card = {}, monsters:GetFirst()

@@ -1,7 +1,7 @@
 -- Only The Strong Survie - each field loses one lowest-ATK monster at End Phase.
 MAYHEM.Register("21_only_the_strong_survive", {
 	apply = function()
-		MAYHEM.OnEvent(EVENT_PHASE + PHASE_END, function()
+		MAYHEM.OnPhase(PHASE_END, function()
 			for player = 0, 1 do
 				local monsters = Duel.GetMatchingGroup(Card.IsFaceup,
 					player, LOCATION_MZONE, 0, nil)

@@ -1,7 +1,7 @@
 -- What is it gonna be? - each player Sets an immune non-Counter Spell/Trap at End Phase.
 MAYHEM.Register("43_what_is_it_gonna_be", {
 	apply = function()
-		MAYHEM.OnEvent(EVENT_PHASE + PHASE_END, function()
+		MAYHEM.OnPhase(PHASE_END, function()
 			for player = 0, 1 do
 				local function legal(card)
 					return card:IsType(TYPE_SPELL + TYPE_TRAP)

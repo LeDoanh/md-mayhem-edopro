@@ -6,7 +6,7 @@ MAYHEM.Register("20_plan_ahead_of_time", {
 			MAYHEM.SetPlayerRules({ hand = 0 })
 		end)
 		MAYHEM.FieldRule(EFFECT_SKIP_DP, 1, true)
-		MAYHEM.OnEvent(EVENT_PHASE + PHASE_STANDBY, function()
+		MAYHEM.OnPhase(PHASE_STANDBY, function()
 			for player = 0, 1 do
 				local count = math.min(params.standby_add,
 					Duel.GetMatchingGroupCount(Card.IsAbleToHand, player, LOCATION_DECK, 0, nil))

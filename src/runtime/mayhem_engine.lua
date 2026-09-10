@@ -84,10 +84,23 @@ function M.PlayerRestriction(code, predicate)
 end
 
 --- Installs a duel-wide trigger.
--- event      : EVENT_* constant (EVENT_PHASE + PHASE_* is allowed)
+-- event      : EVENT_* constant. NOT EVENT_PHASE + PHASE_* - see OnPhase.
 -- op         : function(e, tp, eg, ep, ev, re, r, rp)
 -- countlimit : optional cap on how often it may fire in the duel
 function M.OnEvent(event, op, countlimit)
+	-- A core has no card, so its effects hang off the field's temp_card, which
+	-- has no location. Processors::PhaseEvent puts every continuous effect
+	-- listening on EVENT_PHASE + phase into core.select_chains, and as soon as
+	-- anything else triggers in that phase the engine asks the player to pick
+	-- between them: the rule becomes declinable, and MSG_SELECT_CHAIN carries a
+	-- card at location 0 that WindBot cannot resolve (it crashes in
+	-- OnSelectChain). EVENT_PHASE_START is an instant event that never reaches
+	-- that list, so phase work is routed there instead.
+	if event >= EVENT_PHASE and event < EVENT_PHASE + 0x1000 then
+		local phase = event - EVENT_PHASE
+		M.Warn("EVENT_PHASE is not usable from a core; using EVENT_PHASE_START instead")
+		event = EVENT_PHASE_START + phase
+	end
 	local e = Effect.GlobalEffect()
 	e:SetType(EFFECT_TYPE_FIELD + EFFECT_TYPE_CONTINUOUS)
 	e:SetCode(event)
@@ -97,6 +110,22 @@ function M.OnEvent(event, op, countlimit)
 	e:SetOperation(op)
 	Duel.RegisterEffect(e, 0)
 	return e
+end
+
+--- Runs op at the start of every PHASE_* named, for whichever player's turn it is.
+-- The op is responsible for looping over both players when the rule is symmetric.
+-- Fires from the engine's instant event, straight after MSG_NEW_PHASE and before
+-- the phase's own trigger window, so the rule always resolves and never competes
+-- with a card's trigger for the player's choice.
+function M.OnPhase(phase, op)
+	-- Only the phases the engine opens with a start event can be hooked. Every
+	-- phase raises one except PHASE_BATTLE, which is the marker for the end of
+	-- the Battle Phase; PHASE_BATTLE_START is what opens it.
+	if phase == PHASE_BATTLE then
+		M.Warn("PHASE_BATTLE has no start event; using PHASE_BATTLE_START")
+		phase = PHASE_BATTLE_START
+	end
+	return M.OnEvent(EVENT_PHASE_START + phase, op)
 end
 
 --- Runs op once at the start of the duel, before the opening hands are drawn.

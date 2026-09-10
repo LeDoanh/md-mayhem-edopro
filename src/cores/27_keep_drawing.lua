@@ -2,7 +2,7 @@
 MAYHEM.Register("27_keep_drawing", {
 	defaults = { hand = 5 },
 	apply = function(params)
-		MAYHEM.OnEvent(EVENT_PHASE + PHASE_END, function()
+		MAYHEM.OnPhase(PHASE_END, function()
 			for player = 0, 1 do
 				local missing = params.hand - Duel.GetFieldGroupCount(player, LOCATION_HAND, 0)
 				local available = Duel.GetFieldGroupCount(player, LOCATION_DECK, 0)

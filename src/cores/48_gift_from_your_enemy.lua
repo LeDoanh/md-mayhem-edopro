@@ -1,7 +1,7 @@
 -- Gift from your Enemy - each player gives the opponent a monster from their Deck.
 MAYHEM.Register("48_gift_from_your_enemy", {
 	apply = function()
-		MAYHEM.OnEvent(EVENT_PHASE + PHASE_STANDBY, function(e)
+		MAYHEM.OnPhase(PHASE_STANDBY, function(e)
 			for owner = 0, 1 do
 				local target = 1 - owner
 				local function legal(card)
