@@ -5,8 +5,8 @@
 Custom duel rules for [EDOPro / Project Ignis](https://projectignis.github.io/),
 picked per match by typing a number into the Host window's **Starting LP** box.
 
-A "mutation core" is one rule: *at most 5 Special Summons per turn*, *the first
-player to take battle damage loses*, *Spell Cards cannot be activated*. The
+A "mutation core" is one rule: *start with no opening hand and tutor at
+Standby*, *only one monster may attack each turn*, *actions spend Energy*. The
 tournament rolls a core before each game; this plugin makes the client enforce
 it, so nobody has to count summons by hand or review replays.
 
@@ -39,10 +39,11 @@ Restart EDOPro afterwards — it scans for the plugin only at startup.
 python tools/make-package.py     # builds dist/mdmayhem-<version>.zip
 ```
 
-Before extracting, check the EDOPro folder. If `init.lua.bak` already exists,
-move that older backup out of the game folder and keep it separately. Then, if
-`init.lua` exists, rename the current file to `init.lua.bak`. Extract the zip
-only after that preflight; the archive cannot make this decision itself.
+Read the packaged `README.txt` before extracting. On a first install, preserve a
+foreign `init.lua`; on an upgrade, overwrite Mayhem's own loader without
+replacing the original pre-Mayhem backup. Preserve a customized
+`mayhem_config.lua`, remove the old plugin directory, extract, then restore the
+config. This cleanup is what removes retired core modules.
 
 ## Use
 
@@ -59,23 +60,9 @@ ran.** A normal Starting LP is left alone, so casual and AI games are unaffected
 The full list is written to `Mayhem-codes.txt` next to `EDOPro.exe`, or run
 `python tools/list-codes.py`.
 
-| Starting LP | Core | Tier | Rule |
-| --- | --- | --- | --- |
-| 1000001 | Tốc Chiến Bạc (partial) | Bạc | 6000 starting LP; host sets Time Limit 120s |
-| 1000002 | Hạn Điền Bạc | Bạc | max 7 Special Summons per turn |
-| 1000003 | Tiết Kiệm Bạc | Bạc | draw 2 per turn |
-| 1000004 | Mỏng Manh Bạc | Bạc | opening hand of 4 |
-| 1000005 | Năng Lượng Bạc | Bạc | turn player recovers 1000 LP each Standby |
-| 1000006 | Giới Hạn Bạc | Bạc | Extra Deck of at most 10 |
-| 1000007 | Tốc Chiến Vàng (partial) | Vàng | 4000 starting LP; host sets Time Limit 60s |
-| 1000008 | Hạn Điền Vàng | Vàng | max 5 Special Summons per turn |
-| 1000009 | Tiết Kiệm Vàng | Vàng | no draw for turn |
-| 1000010 | Mỏng Manh Vàng | Vàng | opening hand of 3 |
-| 1000012 | Giới Hạn Vàng | Vàng | Extra Deck of at most 6 |
-| 1000013 | Tử Chiến (partial) | Kim Cương | 2000 starting LP; host sets Time Limit 30s; handtrap lock not implemented |
-| 1000015 | Nhất Kích | Kim Cương | first player to take battle damage loses |
-| 1000016 | Tay Không | Kim Cương | opening hand of 1 |
-| 1000018 | Phong Ấn | Kim Cương | Spell Cards cannot be activated |
+Codes `1–19` are retired permanently. The current catalogue has 38 entries at
+codes `20–57`; use the generated list rather than copying a static table from
+documentation.
 
 A banlist for the tournament's permanent floodgate bans ships as
 `lflists/Mayhem_Tactical.lflist.conf`; pick it in the room's Rule dropdown.
@@ -101,7 +88,8 @@ source it was verified against.
 One file in `src/cores/`, one entry in `cores.json`:
 
 ```lua
-MAYHEM.Register("my_core", {
+-- For the next unused code, 58:
+MAYHEM.Register("58_my_core", {
     defaults = { some_number = 5 },
     apply = function(params)
         MAYHEM.FieldRule(EFFECT_X, params.some_number, true)
@@ -117,7 +105,7 @@ Two test layers:
 
 ```bash
 lua tools/test-cores.lua                # offline, ~1s, checks the wiring
-python tools/run-duel.py --code 8       # loads the client's real ocgcore.dll
+python tools/run-duel.py --code 20      # loads the client's real ocgcore.dll
 ```
 
 `run-duel.py` needs a 32-bit Python, because EDOPro is 32-bit:
@@ -140,17 +128,17 @@ is detected and left alone.
 - **Deck-construction rules cannot block deck building.** EDOPro's deck checker
   is client-side, so Extra Deck / Main Deck size limits are enforced as an
   automatic loss at duel start instead.
-- **No way to show players text.** The client has no handler for the core's hint
-  message, so life points are the only visible confirmation.
-- Four cores in `cores.json` are specified but not yet written; their intended
-  mechanism is recorded in each entry.
+- **No general player-text channel.** Energy Dominate deliberately uses a
+  numeric hint plus script chat; set `coreLogOutput=3` to see its chat balance.
+- Three catalogue entries are marked `partial`; their exact engine limitations
+  and required room settings are printed in `Mayhem-codes.txt`.
 
 ## Layout
 
 ```
 cores.json          the registry: code → mutation, script, parameters
 src/runtime/        bootstrap, engine helpers, operator config
-src/cores/          one mutation core per file; the file name is the core id
+src/cores/          one core per file, named <code>_<id>.lua
 install/            duel entry point, banlist sources
 tools/              install, uninstall, generators, tests, headless duel runner
 docs/               how to write a core, and the verified engine findings

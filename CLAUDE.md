@@ -59,8 +59,9 @@ whatever install.ps1 writes, the zip must contain.
 
 1. Add an entry to `cores.json` with the **next unused `code`**. Codes are
    permanent: a printed code must keep meaning the same mutation. `sheet_name`
-   must match the Name column in `../web-app/public/mutations.xlsx` exactly.
-2. Create `src/cores/<id>.lua` - copy the closest existing core; they are all
+   must match the approved source workbook (`../Loi.xlsx` for catalogue 1.0.0)
+   and the roller's synchronized copy exactly.
+2. Create `src/cores/<code>_<id>.lua` - copy the closest existing core; they are all
    under 25 lines. The file name **is** the core id; there is no registry to
    update, because `build-catalogue.py` reads the folder and fails if a
    `cores.json` entry names a file that is not there.
@@ -81,7 +82,7 @@ client's own `cards.cdb` by `python tools/build-banlist.py`.
 ## Core file shape
 
 ```lua
-MAYHEM.Register("my_core", {
+MAYHEM.Register("58_my_core", {
     defaults = { some_number = 5 },   -- optional, overridden by the catalogue entry
     apply = function(params)          -- required
         MAYHEM.FieldRule(EFFECT_X, params.some_number, true)
@@ -89,16 +90,18 @@ MAYHEM.Register("my_core", {
 })
 ```
 
-Helpers in `src/mayhem_engine.lua`:
+Helpers in `src/runtime/mayhem_engine.lua`:
 
 | Helper | Use for |
 | --- | --- |
 | `MAYHEM.FieldRule(code, value, player_target)` | permanent rule on both players |
+| `MAYHEM.PlayerRestriction(code, predicate)` | summon bans - the engine reads these off the effect's target, not its value |
 | `MAYHEM.OnEvent(event, op, countlimit)` | duel-wide trigger (`EVENT_PHASE + PHASE_*` allowed) |
 | `MAYHEM.OnStartup(op)` | runs once before opening hands are drawn |
 | `MAYHEM.SetPlayerRules{ lp=, hand=, draw= }` | starting LP / opening hand / per-turn draw; **startup only** |
 | `MAYHEM.Log(msg)` | progress note, only when `debug` is on in the config |
 | `MAYHEM.Warn(msg)` | a real problem; always reported |
+| `MAYHEM.AnnounceEnergy(player, value, max, reason)` | Energy balance hint + requested chat line |
 
 There is **no** player-facing text channel. `Debug.ShowHint` looks like one but
 `duelclient.cpp` has 97 `case MSG_` arms and none of them is `MSG_SHOW_HINT`, so
@@ -161,7 +164,8 @@ In the client, `MAYHEM.Log` is off unless `debug = true` in the installed
 "Script Error" and, when `coreLogOutput` in `<game>\config\system.conf` includes
 the chat bit (`3` = chat + file), prints it in red in the duel chat. Routine
 progress notes must never appear there — use `MAYHEM.Warn` only for genuine
-problems, and `MAYHEM.Announce` for anything the player should see.
+  problems. `MAYHEM.AnnounceEnergy` is the narrow exception for the requested
+  Energy balance display.
 
 `run-duel.py` serves its own config with `debug = true`, so it still sees
 everything; `--real-config` uses the installed one to show exactly what a player's

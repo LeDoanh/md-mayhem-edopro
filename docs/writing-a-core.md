@@ -2,7 +2,10 @@
 
 A **core** is one duel rule — "at most 5 Special Summons per turn", "the first
 player to take battle damage loses". One core is one file in `src/cores/`, and
-the file name is the core's id.
+the file name is the core's id. Catalogue cores use `<code>_<slug>.lua` so the
+LP code is visible while browsing files. The generated catalogue keeps aliases
+for pre-prefix operator configs, so an old `enabled = { "energy_dominate" }`
+still resolves to `56_energy_dominate`.
 
 This is the practical guide. `edopro-integration.md` records *why* the plumbing
 looks the way it does; read that once before changing anything under
@@ -27,9 +30,8 @@ to install **global effects** — effects owned by no card
 no custom cards, no `.cdb` rows and no deck slots, and why the opponent does not
 have to install anything: only the host runs the duel core.
 
-`params` is `defaults` merged with the catalogue entry's `params`, so the same
-core file serves every tier of a mutation. `high_friction` is one file and
-covers both `Hạn Điền Bạc` (7 summons) and `Hạn Điền Vàng` (5).
+`params` is `defaults` merged with the catalogue entry's `params`, so one core
+file can serve catalogue variants without embedding tournament values in Lua.
 
 ## The loop
 
@@ -58,20 +60,15 @@ it loads the client's own `ocgcore.dll` and replays `Game::SetupDuel`.
 
 ## Anatomy
 
-`src/cores/high_friction.lua`, in full:
+`src/cores/30_be_more_efficient.lua`, in full:
 
 ```lua
--- Han Dien / High Friction - hard cap on Special Summons per turn, per player.
---
--- EFFECT_SPSUMMON_COUNT_LIMIT is the same engine rule "Vanity's Fiend"-style
--- cards use, so the core counts and blocks by itself. No manual counting, no
--- replay review: an illegal Special Summon simply cannot be declared.
-MAYHEM.Register("high_friction", {
-    defaults = { max_special_summons = 5 },
+-- Be more efficient - each player has only three Monster and Spell/Trap zones.
+MAYHEM.Register("30_be_more_efficient", {
+    defaults = { max_zones = 3 },
     apply = function(params)
-        -- The core only tracks per-turn Special Summon counts when asked to.
-        Duel.EnableGlobalFlag(GLOBALFLAG_SPSUMMON_COUNT)
-        MAYHEM.FieldRule(EFFECT_SPSUMMON_COUNT_LIMIT, params.max_special_summons, true)
+        MAYHEM.FieldRule(EFFECT_MAX_MZONE, params.max_zones, true)
+        MAYHEM.FieldRule(EFFECT_MAX_SZONE, params.max_zones, true)
     end,
 })
 ```
@@ -95,11 +92,13 @@ All of these live on the global `MAYHEM` table, from `src/runtime/mayhem_engine.
 | Helper | Use for |
 | --- | --- |
 | `MAYHEM.FieldRule(code, value, player_target)` | a permanent rule on both players |
+| `MAYHEM.PlayerRestriction(code, predicate)` | a summon ban, whose predicate the core reads as a *target* |
 | `MAYHEM.OnEvent(event, op, countlimit)` | a duel-wide trigger |
 | `MAYHEM.OnStartup(op)` | run once before the opening hands are drawn |
 | `MAYHEM.SetPlayerRules{ lp=, hand=, draw= }` | starting LP / opening hand / per-turn draw — **startup only** |
 | `MAYHEM.Log(msg)` | progress note; silent unless `debug = true` in the config |
 | `MAYHEM.Warn(msg)` | a real fault; always reported |
+| `MAYHEM.AnnounceEnergy(player, value, max, reason)` | Energy Dominate number hint + requested chat line |
 | `MAYHEM.WIN_REASON` | the win reason id to pass to `Duel.Win` |
 
 `player_target` on `FieldRule` is not cosmetic: effects the core reads off a
@@ -108,22 +107,28 @@ player (`EFFECT_DRAW_COUNT`, `EFFECT_SPSUMMON_COUNT_LIMIT`) need
 have it. Copy whichever the stock card scripts use — see *Finding an effect
 code* below.
 
+`FieldRule` installs the rule as the effect's **value**, which is where most
+codes are read from. Three summon bans are read from the effect's **target**
+instead, so they use `PlayerRestriction`: `EFFECT_CANNOT_SUMMON`,
+`EFFECT_CANNOT_FLIP_SUMMON` and `EFFECT_CANNOT_SPECIAL_SUMMON`. The trap list
+explains why choosing the wrong one fails silently.
+
 ## Recipes
 
 Every shape below is already implemented; open the named file for the full
 version.
 
-**A permanent numeric limit** — `high_friction`, `thrift`
+**A permanent numeric limit** — `30_be_more_efficient`
 
 ```lua
-MAYHEM.FieldRule(EFFECT_DRAW_COUNT, params.draw, true)
+MAYHEM.FieldRule(EFFECT_MAX_MZONE, params.max_zones, true)
 ```
 
-**A ban on activating something** — `sealed_magic`
+**A ban on activating something** — `51_quick_play_owner_turn`
 
 ```lua
 MAYHEM.FieldRule(EFFECT_CANNOT_ACTIVATE, function(e, re, tp)
-    return re:GetHandler():IsType(TYPE_SPELL)
+    return re:GetHandler():IsType(TYPE_QUICKPLAY)
 end)
 ```
 
@@ -131,27 +136,38 @@ Returning `true` blocks the activation. The same shape bans handtraps by
 filtering on `re:GetHandler():IsLocation(LOCATION_HAND)` — by position, so no
 card list can go stale.
 
-**Something every turn** — `energy_surge`
+**A ban on summoning something** — `26_there_can_be_only_one_kind`
 
 ```lua
-MAYHEM.OnEvent(EVENT_PHASE + PHASE_STANDBY, function()
-    Duel.Recover(Duel.GetTurnPlayer(), params.amount, REASON_RULE)
+MAYHEM.PlayerRestriction(EFFECT_CANNOT_SPECIAL_SUMMON, function(e, card, player)
+    return card:IsLocation(LOCATION_EXTRA) and used[player + 1]
 end)
 ```
 
-**An alternate win condition** — `first_blood`
+Returning `true` blocks the summon. `EFFECT_CANNOT_SUMMON` and
+`EFFECT_CANNOT_FLIP_SUMMON` pass the same first three arguments, so a single
+predicate can serve all three codes.
+
+**Something every turn** — `47_back_from_the_grave`
 
 ```lua
--- ep is the player the battle damage was dealt to.
-MAYHEM.OnEvent(EVENT_BATTLE_DAMAGE, function(e, tp, eg, ep)
-    Duel.Win(1 - ep, MAYHEM.WIN_REASON)
-end, 1)
+MAYHEM.OnEvent(EVENT_PHASE + PHASE_STANDBY, function()
+    -- select and Special Summon one legal monster from each player's GY
+end)
+```
+
+**An alternate win condition** — `37_create_your_own_victory`
+
+```lua
+MAYHEM.OnEvent(EVENT_ADJUST, function()
+    -- evaluate the five-name / three-copies board condition, then Duel.Win
+end)
 ```
 
 The trailing `1` is a count limit: fire once per duel. Leave it off for a
 trigger that should repeat.
 
-**Changed starting resources** — `speed_blitz`, `resource_starvation`
+**Changed starting resources** — `32_you_have_to_be_quick`
 
 ```lua
 MAYHEM.OnStartup(function()
@@ -162,7 +178,7 @@ end)
 Must be inside `OnStartup`: it rewrites raw player state and the opening draw
 has not happened yet.
 
-**A deck-construction rule** — `extra_embargo`
+**A deck-construction rule** — `25_this_sound_familiar`
 
 EDOPro's deck checker is client-side and not extensible, so size limits cannot
 block deck building. Enforce them as an automatic referee call instead:
@@ -170,8 +186,9 @@ block deck building. Enforce them as an automatic referee call instead:
 ```lua
 MAYHEM.OnStartup(function()
     for player = 0, 1 do
-        if Duel.GetFieldGroupCount(player, LOCATION_EXTRA, 0) > params.max_extra then
-            MAYHEM.Warn("player " .. player .. " lost: extra deck too large")
+        -- reject duplicate original codes in the Main Deck
+        if has_duplicate_name(player) then
+            MAYHEM.Warn("player " .. player .. " lost: duplicate Main Deck name")
             Duel.Win(1 - player, MAYHEM.WIN_REASON)
             return
         end
@@ -190,20 +207,20 @@ pointing at the same script:
 
 ```json
 {
-  "sheet_name": "Hạn Điền Vàng",
-  "code": 8,
-  "tier": "Vang",
+  "sheet_name": "Energy Dominate",
+  "code": 56,
+  "tier": "Excel",
   "status": "implemented",
-  "script": "high_friction",
-  "params": { "max_special_summons": 5 }
+  "script": "56_energy_dominate",
+  "params": { "max_energy": 12, "normal_cost": 2, "quick_cost": 4 }
 }
 ```
 
 - `code` is **permanent**. It is what a host types into Starting LP, and it may
   end up printed on a tournament sheet. Always take the next unused number;
   never renumber, never reuse.
-- `sheet_name` must match the Name column in `../web-app/public/mutations.xlsx`
-  exactly — that is the join between the roller and the plugin.
+- `sheet_name` must match the Name column in the approved source workbook
+  (`D:\AI\MDMayHem\Loi.xlsx` for catalogue 1.0.0) exactly.
 - `script` is the file stem in `src/cores/`. There is no registry to update:
   `build-catalogue.py` reads the folder and fails if the file is missing.
 - `status: "planned"` documents a core that has no script yet. It is skipped by
@@ -240,11 +257,10 @@ against stub `Duel` / `Effect` / `Debug` globals, loading the client's actual
 `constant.lua` so assertions use real effect numbers:
 
 ```lua
-tests["high_friction caps special summons and enables the counter"] = function()
-    run({ enabled = { "high_friction" } }, nil)
-    assert(recorder.flags[GLOBALFLAG_SPSUMMON_COUNT], "spsummon counter not enabled")
-    local effect = effect_with(EFFECT_SPSUMMON_COUNT_LIMIT)
-    assert(effect and effect.value == 5, "wrong limit")
+tests["strength and efficiency install their field rules"] = function()
+    run({ enabled = { "29_strength_of_the_weak", "30_be_more_efficient" } })
+    assert(effect_with(EFFECT_IMMUNE_EFFECT), "weakest-monster immunity missing")
+    assert(effect_with(EFFECT_MAX_MZONE).value == 3, "monster zone cap missing")
 end
 ```
 
@@ -280,9 +296,10 @@ to bite.
   `Debug.SetPlayerInfo` alone is invisible on screen. `SetPlayerRules` and
   `SetStartingLP` already re-broadcast with `Duel.SetLP`; if you write a new LP
   path, do the same.
-- **There is no way to show a player text.** `Debug.ShowHint` exists but
-  `duelclient.cpp` has no handler for `MSG_SHOW_HINT`, so it is dropped. Use LP
-  changes as the visible signal.
+- **There is no normal arbitrary player-text API.** `Debug.ShowHint` is dropped
+  by the client. Energy Dominate is the deliberate exception: it uses
+  `HINT_NUMBER` for the balance and `Debug.Message` for the requested chat log.
+  The host must set `coreLogOutput=3`; EDOPro labels those lines "Script Error".
 - **`MAYHEM.Log` is silent by default.** EDOPro labels every script message
   "Script Error" and prints it in red in the duel chat, so routine notes must
   stay off. Use `MAYHEM.Warn` only for genuine faults.
@@ -290,6 +307,20 @@ to bite.
   Multiplayer runs on the remote server, where the plugin does not exist and
   cannot even report that it is missing. Solo mode takes its LP from the puzzle
   script, so it is not a valid test either.
+- **A restriction on the wrong callback bans the action outright.** The engine
+  collects the summon bans with `field::filter_player_effect` and then evaluates
+  the effect's *target*: `if(!eff->target) return FALSE` means an effect with no
+  target function is a blanket ban, and a predicate parked on the value is never
+  consulted. Use `MAYHEM.PlayerRestriction` for `EFFECT_CANNOT_SUMMON`,
+  `EFFECT_CANNOT_FLIP_SUMMON` and `EFFECT_CANNOT_SPECIAL_SUMMON`.
+  `EFFECT_CANNOT_ACTIVATE` is the opposite — `effect::is_action_check` reaches
+  it through `check_value_condition`, so its predicate belongs on the value.
+- **`EFFECT_CANNOT_DRAW` cannot be made conditional.** `is_player_can_draw`
+  only asks `is_player_affected_by_effect`, which checks that such an effect
+  exists; no callback is ever run. To gate draws on duel state, register the
+  effect when the condition begins and `Effect.Reset()` it when the condition
+  ends, the way `31_droll_lock_limit` does. It also only covers draws that are
+  not `REASON_RULE`, so it never blocks the normal Draw Phase draw.
 - **EDOPro scans for scripts once, at startup.** Installing into a running
   client does nothing until it restarts.
 - **The install is flat.** `src/cores/<id>.lua` ships as
@@ -301,18 +332,9 @@ to bite.
   refuses the second and warns, so behaviour stays deterministic — but the rule
   you wanted may not be the one that won.
 
-## Exercises
+## Generated token codes
 
-Four cores are specified in `cores.json` but not written. Each entry carries its
-`mechanism` field, which is the intended approach:
-
-| Code | Mutation | Shape |
-| --- | --- | --- |
-| 11 | Lực Hút Vàng | startup validator on `LOCATION_DECK`, same shape as `extra_embargo` |
-| 14 | handtrap lock | `EFFECT_CANNOT_ACTIVATE` filtered on `LOCATION_HAND` |
-| 17 | Trống Rỗng | `EFFECT_CANNOT_SPECIAL_SUMMON` filtered on previous location `LOCATION_EXTRA` |
-| 19 | Tuyệt Vọng | `EFFECT_CANNOT_SPECIAL_SUMMON` for both players |
-
-17 and 19 have stopgaps available today (`extra_embargo` with `max_extra` 0, and
-`high_friction` with `max_special_summons` 0), but blocking the summon reads
-better in play than an instant loss, which is why each gets its own script.
+Token-creating cores read `src/runtime/mayhem_token_codes.lua`. Regenerate that
+file from the selected client's `cards.cdb` with
+`python tools/build-token-codes.py`; never copy a card passcode into a core by
+hand.

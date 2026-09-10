@@ -75,6 +75,32 @@ The original tournament brief assumed manual counting and replay review for the
 Special-Summon quota. That is unnecessary: `EFFECT_SPSUMMON_COUNT_LIMIT` is an
 engine rule, so an over-quota summon simply cannot be declared.
 
+### Which callback the core reads a restriction from
+
+A restriction is only conditional if the engine actually calls the function
+holding the condition, and the callback differs per effect code. Verified
+against `edo9300/ygopro-core` (the core EDOPro builds from) at the lines named
+below; the offline harness cannot catch a mistake here, because a stub records
+whatever it is handed.
+
+| Effect code | Collected by | Condition read from | Consequence of the wrong one |
+| --- | --- | --- | --- |
+| `EFFECT_CANNOT_SUMMON` | `field::is_player_can_summon` (`field.cpp:2744`) | `target(e, card, player, sumtype, sumpos, toplayer)` | `if(!peff->target) return FALSE` — no target means no summons at all |
+| `EFFECT_CANNOT_FLIP_SUMMON` | `field::is_player_can_flipsummon` | `target(e, card, player)` | same blanket ban |
+| `EFFECT_CANNOT_SPECIAL_SUMMON` | `field::is_player_can_spsummon` (`field.cpp:2815`, `2845`) | `target(e, card, player, sumtype, sumpos, toplayer, re, proc)` | same blanket ban, and the "can this player Special Summon at all" probe fails too |
+| `EFFECT_CANNOT_ACTIVATE` | `effect::is_action_check` (`effect.cpp:308`) | `value(e, activating_effect, player)` | a target is ignored; the ban never applies |
+| `EFFECT_CANNOT_INACTIVATE`, `EFFECT_CANNOT_DISEFFECT` | `field::is_chain_negatable` / `is_chain_disablable` | `value(e, chain_count)` | as above |
+| `EFFECT_CANNOT_DRAW` | `field::is_player_can_draw` -> `is_player_affected_by_effect` | nothing — presence only | any such effect bans every non-`REASON_RULE` draw for the whole duel |
+| `EFFECT_CANNOT_TO_HAND`, `EFFECT_CANNOT_ATTACK_ANNOUNCE`, `EFFECT_IMMUNE_EFFECT` | `card::is_affected_by_effect` / `filter_effect` | `target(e, card)` picks the cards, `value` decides the outcome | a card-scoped rule with no target hits every card |
+| `EFFECT_ACTIVATE_COST` | `filter_player_effect` (`effect.cpp:316`, `processor.cpp:3643`) | `target(e, te, player)` gates it, `cost(e, te, player)` checks, `operation(e, player)` pays | needs `EFFECT_FLAG_PLAYER_TARGET`, or it is never collected |
+| `EFFECT_SPSUMMON_COST` | `card::check_cost_condition` -> `card::filter_effect` (`card.cpp:3078`) | `cost(e, card, player, sumtype)`, `operation(e, player)` | must **not** have `EFFECT_FLAG_PLAYER_TARGET`: `filter_effect` only takes aura effects without it |
+
+`card::filter_effect` and `card::is_affected_by_effect` both end by walking
+`game_field->effects.aura_effect` and accepting an entry when
+`!is_flag(EFFECT_FLAG_PLAYER_TARGET) && is_target(this)` — that is why a global
+field effect can carry a per-card rule at all, and why the same effect cannot
+serve a player-scoped and a card-scoped code at once.
+
 ## 4. Path rules that shape the layout
 
 - `Duel.LoadScript` raises `"Passed script name containing a path separator"` for

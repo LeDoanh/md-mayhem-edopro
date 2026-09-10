@@ -6,8 +6,8 @@ Luật đấu tùy biến cho [EDOPro / Project Ignis](https://projectignis.gith
 chọn theo từng ván bằng cách gõ một con số vào ô **Starting LP** trong cửa sổ
 Host.
 
-Một "lõi đột biến" là một luật: *tối đa 5 lần Special Summon mỗi lượt*, *ai nhận
-sát thương chiến đấu trước thì thua*, *cấm kích hoạt Spell*. Giải đấu roll một
+Một "lõi đột biến" là một luật: *bắt đầu không có bài và lấy bài ở Standby*,
+*mỗi lượt chỉ một quái được tấn công*, *hành động tiêu hao Energy*. Giải đấu roll một
 lõi trước mỗi ván; plugin này khiến client tự thực thi luật đó, nên không ai
 phải đếm summon bằng tay hay soi lại replay.
 
@@ -40,10 +40,11 @@ EDOPro** — nó chỉ quét plugin lúc khởi động.
 python tools/make-package.py     # tạo dist/mdmayhem-<version>.zip
 ```
 
-Trước khi giải nén, kiểm tra thư mục EDOPro. Nếu đã có `init.lua.bak`, chuyển
-backup cũ đó ra ngoài thư mục game và giữ riêng. Sau đó, nếu có `init.lua`, đổi
-tên file hiện tại thành `init.lua.bak`. Chỉ giải nén khi đã làm xong bước này;
-file zip không thể tự quyết định việc backup một cách an toàn.
+Đọc `README.txt` trong package trước khi giải nén. Lần cài đầu phải bảo toàn
+`init.lua` của công cụ khác; khi nâng cấp thì ghi đè loader Mayhem hiện tại nhưng
+không thay backup gốc trước khi cài Mayhem. Hãy giữ lại `mayhem_config.lua` nếu
+đã tùy chỉnh, xóa thư mục plugin cũ, giải nén rồi phục hồi config để các module
+lõi đã nghỉ hưu không còn sót lại.
 
 ## Cách dùng
 
@@ -60,23 +61,9 @@ không đụng tới, nên game thường và đấu AI không bị ảnh hưở
 Danh sách đầy đủ nằm ở `Mayhem-codes.txt` cạnh `EDOPro.exe`, hoặc chạy
 `python tools/list-codes.py`.
 
-| Starting LP | Lõi | Cấp | Luật |
-| --- | --- | --- | --- |
-| 1000001 | Tốc Chiến Bạc (chưa đủ) | Bạc | LP khởi đầu 6000; host đặt Time Limit 120 giây |
-| 1000002 | Hạn Điền Bạc | Bạc | tối đa 7 lần Special Summon mỗi lượt |
-| 1000003 | Tiết Kiệm Bạc | Bạc | rút 2 lá mỗi lượt |
-| 1000004 | Mỏng Manh Bạc | Bạc | bài khởi đầu 4 lá |
-| 1000005 | Năng Lượng Bạc | Bạc | người đến lượt hồi 1000 LP mỗi Standby |
-| 1000006 | Giới Hạn Bạc | Bạc | Extra Deck tối đa 10 lá |
-| 1000007 | Tốc Chiến Vàng (chưa đủ) | Vàng | LP khởi đầu 4000; host đặt Time Limit 60 giây |
-| 1000008 | Hạn Điền Vàng | Vàng | tối đa 5 lần Special Summon mỗi lượt |
-| 1000009 | Tiết Kiệm Vàng | Vàng | không được rút bài đầu lượt |
-| 1000010 | Mỏng Manh Vàng | Vàng | bài khởi đầu 3 lá |
-| 1000012 | Giới Hạn Vàng | Vàng | Extra Deck tối đa 6 lá |
-| 1000013 | Tử Chiến (chưa đủ) | Kim Cương | LP 2000; host đặt Time Limit 30 giây; chưa có khóa handtrap |
-| 1000015 | Nhất Kích | Kim Cương | ai nhận sát thương chiến đấu trước thì thua |
-| 1000016 | Tay Không | Kim Cương | bài khởi đầu 1 lá |
-| 1000018 | Phong Ấn | Kim Cương | cấm kích hoạt Spell |
+Mã `1–19` đã nghỉ hưu vĩnh viễn. Catalogue hiện có 38 lõi với mã `20–57`;
+hãy dùng danh sách được generator tạo thay vì chép lại một bảng tĩnh trong tài
+liệu.
 
 Banlist cấm floodgate cố định của giải nằm ở
 `lflists/Mayhem_Tactical.lflist.conf`; chọn nó ở ô Rule của phòng.
@@ -100,7 +87,8 @@ nguồn source đã đối chiếu.
 Một file trong `src/cores/`, một entry trong `cores.json`:
 
 ```lua
-MAYHEM.Register("my_core", {
+-- Với mã chưa dùng tiếp theo là 58:
+MAYHEM.Register("58_my_core", {
     defaults = { some_number = 5 },
     apply = function(params)
         MAYHEM.FieldRule(EFFECT_X, params.some_number, true)
@@ -116,7 +104,7 @@ Hai lớp kiểm tra:
 
 ```bash
 lua tools/test-cores.lua                # offline, ~1 giây, kiểm tra đấu nối
-python tools/run-duel.py --code 8       # nạp ocgcore.dll thật của client
+python tools/run-duel.py --code 20      # nạp ocgcore.dll thật của client
 ```
 
 `run-duel.py` cần Python 32-bit vì EDOPro là 32-bit:
@@ -139,17 +127,17 @@ ra và giữ nguyên.
 - **Luật dựng deck không chặn được lúc build deck.** Bộ kiểm tra deck của EDOPro
   nằm phía client nên giới hạn số lá Extra/Main được thực thi bằng cách xử thua
   ngay đầu ván.
-- **Không có cách hiện chữ cho người chơi.** Client không có handler cho message
-  hint của core, nên chỉ số máu là dấu hiệu nhìn thấy được duy nhất.
-- Bốn lõi trong `cores.json` đã đặc tả nhưng chưa viết; cơ chế dự định ghi ngay
-  trong entry.
+- **Không có kênh chữ tổng quát cho người chơi.** Energy Dominate chủ động dùng
+  numeric hint và script chat; đặt `coreLogOutput=3` để thấy số dư trong chat.
+- Ba entry được đánh dấu `partial`; giới hạn engine và room setting cần thiết
+  được ghi rõ trong `Mayhem-codes.txt`.
 
 ## Cấu trúc
 
 ```
 cores.json          registry: mã → đột biến, script, tham số
 src/runtime/        bootstrap, helper engine, config vận hành
-src/cores/          mỗi lõi một file; tên file chính là id của lõi
+src/cores/          mỗi lõi một file, tên dạng <mã>_<id>.lua
 install/            entry point cho ván đấu, nguồn banlist
 tools/              cài, gỡ, generator, test, trình chạy duel headless
 docs/               hướng dẫn viết lõi và các phát hiện engine đã kiểm chứng
