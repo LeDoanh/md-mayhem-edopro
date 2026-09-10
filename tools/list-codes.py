@@ -26,14 +26,22 @@ def main() -> int:
     data = json.loads((REPO / "cores.json").read_text(encoding="utf-8"))
     base = data["lp_code_base"]
     print(f"Starting LP = {base} + code\n")
-    print(f"{'LP':>9}  {'code':>4}  {'tier':<9} name")
+    print(f"{'LP':>9}  {'code':>4}  {'tier':<9} {'status':<11} name / requirements")
     for core in data["cores"]:
         planned = core["status"] == "planned"
         if planned and not args.all:
             continue
-        mark = "  (planned, no script yet)" if planned else ""
+        requirements = []
+        if planned:
+            requirements.append("no script yet")
+        time_limit = core.get("room_settings", {}).get("time_limit")
+        if time_limit is not None:
+            requirements.append(f"set Time Limit={time_limit}s")
+        if core.get("also_needs"):
+            requirements.append("also needs: " + ", ".join(core["also_needs"]))
+        suffix = f" — {'; '.join(requirements)}" if requirements else ""
         print(f"{base + core['code']:>9}  {core['code']:>4}  {core['tier']:<9} "
-              f"{core['sheet_name']}{mark}")
+              f"{core['status'].upper():<11} {core['sheet_name']}{suffix}")
     return 0
 
 

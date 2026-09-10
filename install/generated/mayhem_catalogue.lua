@@ -5,6 +5,7 @@
 
 MAYHEM_LP_CODE_BASE = 1000000
 MAYHEM_DEFAULT_LP = 8000
+MAYHEM_CATALOGUE_VERSION = "0.4.0"
 
 MAYHEM_CATALOGUE = {
 	[1] = { label = "Tốc Chiến Bạc", cores = { speed_blitz = { lp = 6000 } } },

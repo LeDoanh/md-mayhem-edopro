@@ -44,7 +44,8 @@ function Find-GameFolders {
 function Resolve-GamePath {
     param(
         [string]$GamePath,
-        [Parameter(Mandatory)][string]$Repo
+        [Parameter(Mandatory)][string]$Repo,
+        [bool]$Remember = $true
     )
 
     $memory = Join-Path $Repo ".game-path"
@@ -55,7 +56,9 @@ function Resolve-GamePath {
             throw "EDOPro.exe not found in '$GamePath'."
         }
         $resolved = (Resolve-Path $GamePath).Path
-        Set-Content -Path $memory -Value $resolved -Encoding ascii -WhatIf:$false
+        if ($Remember) {
+            Set-Content -Path $memory -Value $resolved -Encoding ascii -WhatIf:$false
+        }
         return $resolved
     }
 
@@ -77,7 +80,9 @@ function Resolve-GamePath {
     if ([Console]::IsInputRedirected) {
         if ($candidates.Count -eq 1) {
             Write-Host "Game folder: $($candidates[0])  (only match found)"
-            Set-Content -Path $memory -Value $candidates[0] -Encoding ascii -WhatIf:$false
+            if ($Remember) {
+                Set-Content -Path $memory -Value $candidates[0] -Encoding ascii -WhatIf:$false
+            }
             return $candidates[0]
         }
         $hint = if ($candidates.Count -eq 0) { "none found" } else { $candidates -join "; " }
@@ -111,7 +116,9 @@ function Resolve-GamePath {
     }
 
     $chosen = (Resolve-Path $chosen).Path
-    Set-Content -Path $memory -Value $chosen -Encoding ascii -WhatIf:$false
+    if ($Remember) {
+        Set-Content -Path $memory -Value $chosen -Encoding ascii -WhatIf:$false
+    }
     Write-Host "Game folder: $chosen  (remembered for next time)"
     return $chosen
 }

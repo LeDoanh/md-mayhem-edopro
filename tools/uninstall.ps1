@@ -37,7 +37,7 @@ $ErrorActionPreference = "Stop"
 
 $repo = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot "resolve-game-path.ps1")
-$GamePath = Resolve-GamePath -GamePath $GamePath -Repo $repo
+$GamePath = Resolve-GamePath -GamePath $GamePath -Repo $repo -Remember:(-not $WhatIfPreference)
 
 $pluginDir = Join-Path $GamePath "expansions\script\mdmayhem"
 $removed = 0
@@ -81,15 +81,12 @@ if ((Test-Path $expansionsScript) -and
 $installedInit = Join-Path $GamePath "init.lua"
 $shippedInit = Join-Path $repo "install\init.lua"
 $backupInit = "$installedInit.bak"
+$installedInitIsOurs = $false
 
 if (Test-Path $installedInit) {
-    $isOurs = (Test-Path $shippedInit) -and
-              ((Get-Sha256 $installedInit) -eq (Get-Sha256 $shippedInit))
-    if (-not $isOurs) {
-        # Also ours if it merely drifted from the shipped copy.
-        $isOurs = [System.IO.File]::ReadAllText($installedInit) -match "mayhem_bootstrap"
-    }
-    if ($isOurs) {
+    $installedInitIsOurs = (Test-Path $shippedInit) -and
+                           ((Get-Sha256 $installedInit) -eq (Get-Sha256 $shippedInit))
+    if ($installedInitIsOurs) {
         if ($PSCmdlet.ShouldProcess($installedInit, "Remove duel entry point")) {
             Remove-Item $installedInit -Force
             Write-Host "remove init.lua"
@@ -101,7 +98,12 @@ if (Test-Path $installedInit) {
 }
 
 if (Test-Path $backupInit) {
-    if ($PSCmdlet.ShouldProcess($backupInit, "Restore backed-up init.lua")) {
+    # Another tool may have replaced init.lua after Mayhem was installed. Never
+    # overwrite that newer owner: leave both it and our backup in place for the
+    # operator to reconcile manually.
+    if ((Test-Path $installedInit) -and (-not $installedInitIsOurs)) {
+        Write-Host "keep   init.lua.bak (current init.lua belongs to something else)"
+    } elseif ($PSCmdlet.ShouldProcess($backupInit, "Restore backed-up init.lua")) {
         Move-Item $backupInit $installedInit -Force
         Write-Host "restore init.lua from init.lua.bak"
     }

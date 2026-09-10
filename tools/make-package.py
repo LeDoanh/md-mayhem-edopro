@@ -5,8 +5,8 @@ EDOPro loads ./init.lua on every platform from shared code in game.cpp, and
 Starting LP is a uint32 everywhere. So Android, Linux and macOS clients just need
 the same files dropped into the game folder, which is what this zip is for.
 
-Extracting it over the EDOPro folder is the whole install. Deleting the files it
-lists is the whole uninstall.
+The archive cannot inspect the destination before extraction. Its README
+therefore requires preserving any existing init.lua before files are copied.
 
 Usage:
     python tools/make-package.py
@@ -15,6 +15,8 @@ Usage:
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -29,6 +31,11 @@ README = """MD Mayhem - EDOPro mutation cores
 
 Install
 -------
+IMPORTANT: check the EDOPro folder before extracting. If init.lua.bak already
+exists, move that older backup out of the game folder and keep it separately.
+Then, if init.lua exists, rename the current file to init.lua.bak. Extract only
+after this preflight; a zip extractor cannot make this decision safely.
+
 Extract this zip over your EDOPro folder, keeping the folder structure. The
 files land as:
 
@@ -67,12 +74,20 @@ list is in Mayhem-codes.txt.
 
 Uninstall
 ---------
-Delete the four paths listed under Install. Nothing else in the client is
-touched - no card scripts, no game modes, no interface strings.
+Delete expansions/script/mdmayhem/, lflists/Mayhem_Tactical.lflist.conf and
+Mayhem-codes.txt. Delete init.lua only if it is byte-for-byte identical to the
+init.lua in this archive; otherwise it may be a shared loader and must be kept.
+If init.lua.bak was created during installation and init.lua was safely deleted,
+rename the backup to init.lua.
 """
 
 
 def main() -> int:
+    # Never package stale generated data. This also validates codes, statuses
+    # and component dependencies before the archive is written.
+    result = subprocess.run([sys.executable, REPO / "tools" / "build-catalogue.py"])
+    if result.returncode != 0:
+        return result.returncode
     catalogue = GENERATED / "mayhem_catalogue.lua"
     if not catalogue.is_file():
         raise SystemExit("install/generated is missing. Run: python tools/build-catalogue.py")

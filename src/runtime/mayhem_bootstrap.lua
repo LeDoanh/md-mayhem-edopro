@@ -15,7 +15,7 @@
 -- Each duel gets a fresh Lua state, so MAYHEM is rebuilt from scratch every game.
 
 MAYHEM = {
-	VERSION = "0.4.0",
+	VERSION = "unknown",
 	cores = {},   -- id -> core definition, filled in by MAYHEM.Register
 	active = {},  -- ids applied to this duel, in the order they were applied
 	labels = {},  -- human-readable names of what was selected
@@ -31,6 +31,10 @@ end
 Duel.LoadScript("mayhem_engine.lua")
 Duel.LoadScript("mayhem_config.lua")
 Duel.LoadScript("mayhem_catalogue.lua")
+
+-- cores.json is the single version source; build-catalogue.py emits it here so
+-- package names and runtime diagnostics cannot drift apart.
+MAYHEM.VERSION = MAYHEM_CATALOGUE_VERSION or MAYHEM.VERSION
 
 local config = MAYHEM_CONFIG or {}
 

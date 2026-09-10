@@ -3,3 +3,7 @@
 
 # Portable packages built by tools/make-package.py.
 dist/
+
+# Python tooling caches.
+__pycache__/
+*.py[cod]

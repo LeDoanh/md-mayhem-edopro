@@ -8,19 +8,19 @@ LAN mode -> Create Host -> Duel tab -> Starting LP = 1000000 + code
 The chosen core sets the real life points once the duel starts.
 A normal Starting LP is left alone, so casual and AI games are unaffected.
 
-       LP  code  tier      name
-  1000001     1  Bac       Tốc Chiến Bạc
-  1000002     2  Bac       Hạn Điền Bạc
-  1000003     3  Bac       Tiết Kiệm Bạc
-  1000004     4  Bac       Mỏng Manh Bạc
-  1000005     5  Bac       Năng Lượng Bạc
-  1000006     6  Bac       Giới Hạn Bạc
-  1000007     7  Vang      Tốc Chiến Vàng
-  1000008     8  Vang      Hạn Điền Vàng
-  1000009     9  Vang      Tiết Kiệm Vàng
-  1000010    10  Vang      Mỏng Manh Vàng
-  1000012    12  Vang      Giới Hạn Vàng
-  1000013    13  KimCuong  Tử Chiến
-  1000015    15  KimCuong  Nhất Kích
-  1000016    16  KimCuong  Tay Không
-  1000018    18  KimCuong  Phong Ấn
+       LP  code  tier      status      name / requirements
+  1000001     1  Bac       PARTIAL     Tốc Chiến Bạc — set Time Limit=120s
+  1000002     2  Bac       IMPLEMENTED Hạn Điền Bạc
+  1000003     3  Bac       IMPLEMENTED Tiết Kiệm Bạc
+  1000004     4  Bac       IMPLEMENTED Mỏng Manh Bạc
+  1000005     5  Bac       IMPLEMENTED Năng Lượng Bạc
+  1000006     6  Bac       IMPLEMENTED Giới Hạn Bạc
+  1000007     7  Vang      PARTIAL     Tốc Chiến Vàng — set Time Limit=60s
+  1000008     8  Vang      IMPLEMENTED Hạn Điền Vàng
+  1000009     9  Vang      IMPLEMENTED Tiết Kiệm Vàng
+  1000010    10  Vang      IMPLEMENTED Mỏng Manh Vàng
+  1000012    12  Vang      IMPLEMENTED Giới Hạn Vàng
+  1000013    13  KimCuong  PARTIAL     Tử Chiến — set Time Limit=30s; missing: no_hand_effects
+  1000015    15  KimCuong  IMPLEMENTED Nhất Kích
+  1000016    16  KimCuong  IMPLEMENTED Tay Không
+  1000018    18  KimCuong  IMPLEMENTED Phong Ấn

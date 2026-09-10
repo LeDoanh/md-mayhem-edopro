@@ -1,6 +1,6 @@
 {
   "$comment": "Single source of truth linking the web-app mutation sheet (web-app/public/mutations.xlsx) to the EDOPro plugin. sheet_name matches the Name column exactly; script names the file in src/cores/, whose stem IS the core id. code is permanent - it is what a host types into Starting LP.",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "cores": [
     {
       "sheet_name": "Tốc Chiến Bạc",

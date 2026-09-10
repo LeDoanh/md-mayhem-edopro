@@ -40,6 +40,24 @@ $GamePath = Resolve-GamePath -GamePath $GamePath -Repo $repo
 
 $pluginDir = Join-Path $GamePath "expansions\script\mdmayhem"
 $configName = "mayhem_config.lua"
+$bootstrap = Join-Path $repo "install\init.lua"
+$installedInit = Join-Path $GamePath "init.lua"
+$backupInit = "$installedInit.bak"
+$needsInitBackup = $false
+
+# Preflight before writing anything. A fixed backup name is deliberate because
+# uninstall knows how to restore it, but an existing file at that name must
+# never be overwritten.
+if (Test-Path $installedInit) {
+    $same = (Get-FileHash $installedInit).Hash -eq (Get-FileHash $bootstrap).Hash
+    if (-not $same) {
+        if (Test-Path $backupInit) {
+            throw ("Cannot safely install: init.lua is not ours and init.lua.bak " +
+                   "already exists. Preserve or rename the backup, then retry.")
+        }
+        $needsInitBackup = $true
+    }
+}
 
 New-Item -ItemType Directory -Force -Path $pluginDir | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $GamePath "lflists") | Out-Null
@@ -118,14 +136,9 @@ Copy-Item $codeList (Join-Path $GamePath "Mayhem-codes.txt") -Force
 Write-Host "copy   Mayhem-codes.txt"
 
 # --- Duel entry point ------------------------------------------------------
-$bootstrap = Join-Path $repo "install\init.lua"
-$installedInit = Join-Path $GamePath "init.lua"
-if (Test-Path $installedInit) {
-    $same = (Get-FileHash $installedInit).Hash -eq (Get-FileHash $bootstrap).Hash
-    if (-not $same) {
-        Copy-Item $installedInit "$installedInit.bak" -Force
-        Write-Host "backup init.lua -> init.lua.bak (it was not ours)"
-    }
+if ($needsInitBackup) {
+    Copy-Item $installedInit $backupInit
+    Write-Host "backup init.lua -> init.lua.bak (it was not ours)"
 }
 Copy-Item $bootstrap $installedInit -Force
 Write-Host "copy   init.lua"
