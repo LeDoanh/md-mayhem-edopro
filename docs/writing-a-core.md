@@ -54,21 +54,21 @@ powershell -ExecutionPolicy Bypass -File tools\install.ps1
 python tools/run-duel.py --code <code>
 ```
 
-Step 6 is the one that matters. The offline harness proves your Lua is wired
-correctly; only `run-duel.py` proves the **engine** accepts the effect, because
-it loads the client's own `ocgcore.dll` and replays `Game::SetupDuel`.
+Step 6 checks what the offline harness cannot: whether the **engine** accepts
+the effect. `run-duel.py` loads the client's own `ocgcore.dll` and replays
+`Game::SetupDuel`; the source-tree engine regressions below use that DLL too.
 
 ## Anatomy
 
-`src/cores/30_be_more_efficient.lua`, in full:
+The numeric Monster Zone limit from `src/cores/30_be_more_efficient.lua`
+(its Spell/Trap limit needs additional handling; see the traps below):
 
 ```lua
--- Be more efficient - each player has only three Monster and Spell/Trap zones.
+-- Minimal example of a numeric Monster Zone limit.
 MAYHEM.Register("30_be_more_efficient", {
-    defaults = { max_zones = 3 },
+    defaults = { monster_zones = 3 },
     apply = function(params)
-        MAYHEM.FieldRule(EFFECT_MAX_MZONE, params.max_zones, true)
-        MAYHEM.FieldRule(EFFECT_MAX_SZONE, params.max_zones, true)
+        MAYHEM.FieldRule(EFFECT_MAX_MZONE, params.monster_zones, true)
     end,
 })
 ```
@@ -122,7 +122,7 @@ version.
 **A permanent numeric limit** — `30_be_more_efficient`
 
 ```lua
-MAYHEM.FieldRule(EFFECT_MAX_MZONE, params.max_zones, true)
+MAYHEM.FieldRule(EFFECT_MAX_MZONE, params.monster_zones, true)
 ```
 
 **A ban on activating something** — `51_quick_play_owner_turn`
@@ -287,6 +287,21 @@ python tools/run-duel.py --code 8 --verbose  # core message ids per step
 python tools/run-duel.py --code 8 --real-config   # what a player's client prints
 ```
 
+The beta regressions have separate entry points:
+
+```bash
+lua tools/test-combat-regressions.lua
+lua tools/test-limit-regressions.lua
+# Use a 32-bit Python executable for the configured client's DLL:
+python tools/test-engine-regressions.py
+```
+
+The engine regression runner reads this repository's Lua sources and the
+configured game's `ocgcore.dll` without installing or changing the game. Its
+checks include loading all 38 cores to the first prompt, first-turn draws with
+and without the native draw flag, a skipped Draw Phase, and mandatory deck-out.
+Loading successfully is not a complete duel behavior test.
+
 Finally, one real duel: **LAN mode → Create Host**, Starting LP = `1000000 +
 code`. Life points snapping from the typed code to the real value is the signal
 that the plugin ran.
@@ -355,6 +370,34 @@ to bite.
 - **Two catalogue entries must not apply the same core twice.** The bootstrap
   refuses the second and warns, so behaviour stays deterministic — but the rule
   you wanted may not be the one that won.
+
+### Beta regression lessons
+
+- **Count the Field Zone explicitly (30).** `EFFECT_MAX_SZONE` caps only the
+  ordinary slots. Subtract an occupied Field Zone from that cap, and block new
+  Field Spell activations/sets when the total is full. Effects can still place
+  cards directly: an `EVENT_ADJUST` rule makes the controller choose the excess
+  Spell/Trap cards to send to the GY with `REASON_RULE`.
+- **Hand destinations follow ownership (31).** A stolen card returns to its
+  owner's hand. Test the owner's quota, not the current controller's quota.
+- **Draw count does not enable the first-turn draw (35).** Supplement it at
+  `EVENT_PREDRAW` only on turn one without `DUEL_1ST_TURN_DRAW`. This avoids
+  doubling a native draw and respects a skipped Draw Phase.
+- **Negating an effect differs from negating its activation (38).** Use
+  `Duel.NegateEffect` for the former; do not fall back to `NegateActivation`.
+- **Exclude only your own generated Tokens (39).** Track created card identities
+  before summoning them to stop recursion while still mirroring other Tokens.
+- **Attach damage-only ATK bonuses in the Damage Step (46).** Record the first
+  declaration, then apply at `EVENT_BATTLE_START`. A negated attack consumes the
+  first-attack allowance without leaving a buff waiting for a nonexistent reset.
+- **“Other card effects” excludes the protected card's own effects (53).** A
+  field immunity value receives `(e, incoming, card)`; compare
+  `incoming:GetOwner()` with `card`, not the global rule's handler.
+- **Mandatory draws must attempt the full amount (55).** Do not guard
+  `Duel.Draw` with a deck-size check; an insufficient deck must cause deck-out.
+- **Cost probes are not payment (56).** Probes for different actions can
+  interleave. Use separate fixed-price activation effects instead of storing the
+  last probed price in a shared label for the later payment callback.
 
 ## Generated token codes
 

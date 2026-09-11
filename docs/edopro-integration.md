@@ -134,6 +134,28 @@ whatever it is handed.
 field effect can carry a per-card rule at all, and why the same effect cannot
 serve a player-scoped and a card-scoped code at once.
 
+### Beta behavior checks
+
+The 2026-09-11 beta fixes also depend on these engine distinctions:
+
+- `EFFECT_MAX_SZONE` counts ordinary Spell/Trap slots, excluding the Field Zone.
+  Core 30 subtracts Field occupancy and separately gates Field activation/set.
+  Direct placements bypass those gates; `EVENT_ADJUST` removes any overflow by
+  rule after the controller chooses the excess cards.
+- `EFFECT_DRAW_COUNT` does not override the first-turn draw skip. Core 35 adds
+  one `REASON_RULE` draw at `EVENT_PREDRAW` only when `DUEL_1ST_TURN_DRAW` is
+  absent. The native flag and skipped Draw Phase cases have DLL regressions.
+  Core 55 always attempts its mandatory roll-sized draw, including deck-out.
+- Activation legality checks and payment are separate. `EFFECT_ACTIVATE_COST`
+  payment receives the player, not the probed activating effect. Core 56 uses
+  fixed-price effects so interleaved probes cannot overwrite the amount paid.
+- `EVENT_BATTLE_START` opens the Damage Step; it is distinct from
+  `EVENT_ATTACK_ANNOUNCE`. Core 46 waits for it before installing the first
+  attack's bonus. Stock example: `script/official/c11449436.lua`.
+- Field immunity values receive the protected card as their third argument.
+  Core 53 exempts `incoming:GetOwner() == card`; stock field-effect example:
+  `script/official/c17841166.lua`.
+
 ## 4. Path rules that shape the layout
 
 - `Duel.LoadScript` raises `"Passed script name containing a path separator"` for
@@ -263,6 +285,20 @@ numbers. It proves wiring, not engine acceptance — that still needs one hosted
 duel (an AI game is enough) per new effect code. When `debug = true`,
 `MAYHEM.Log` writes `[MAYHEM]` lines to `<game>\error.log` for after-the-fact
 checks; `run-duel.py` enables debug in its synthetic config by default.
+
+Run the focused Lua regressions with `lua tools/test-combat-regressions.lua`
+and `lua tools/test-limit-regressions.lua`. With a 32-bit Python interpreter,
+run `python tools/test-engine-regressions.py` to test repository sources against
+the configured client's DLL without installing or changing any game files.
+The four engine tests cover all 38 cores loading to the first prompt, core 35
+drawing once with and without the native first-turn flag, core 35 respecting a
+skipped Draw Phase, and core 55 losing when its mandatory draw exceeds the deck.
+The all-core load check does not prove full-duel behavior.
+
+`OCG_NewCardInfo.duelist` is an index within a team. In a standard two-player
+duel it must be `0` for both teams; `team` and `con` distinguish players.
+`run-duel.py` now uses that index for both decks. Its earlier second-player
+index of `1` left that player's deck empty and invalidated two-sided testing.
 
 ## Open questions
 
