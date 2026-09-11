@@ -1,4 +1,4 @@
--- This card is trash - negate each player's first activation every turn.
+-- This card is trash - negate the effect of each player's first activation per turn.
 MAYHEM.Register("38_this_card_is_trash", {
 	apply = function()
 		local used = { false, false }
@@ -6,7 +6,7 @@ MAYHEM.Register("38_this_card_is_trash", {
 		MAYHEM.OnEvent(EVENT_CHAINING, function(e, tp, eg, ep, chain, effect, reason, player)
 			if used[player + 1] then return end
 			used[player + 1] = true
-			if Duel.NegateActivation(chain) == 0 then Duel.NegateEffect(chain) end
+			Duel.NegateEffect(chain)
 		end)
 	end,
 })

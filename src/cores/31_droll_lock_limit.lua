@@ -47,7 +47,8 @@ MAYHEM.Register("31_droll_lock_limit", {
 		to_hand:SetCode(EFFECT_CANNOT_TO_HAND)
 		to_hand:SetTargetRange(LOCATION_ALL, LOCATION_ALL)
 		to_hand:SetTarget(function(e, card)
-			return added[card:GetControler() + 1] >= params.max_cards
+			-- A stolen card returns to its owner's hand, not its controller's.
+			return added[card:GetOwner() + 1] >= params.max_cards
 		end)
 		Duel.RegisterEffect(to_hand, 0)
 	end,

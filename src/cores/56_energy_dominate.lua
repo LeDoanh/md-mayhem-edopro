@@ -18,11 +18,6 @@ MAYHEM.Register("56_energy_dominate", {
 			announce(player, "refreshed")
 		end)
 
-		local activation = Effect.GlobalEffect()
-		activation:SetType(EFFECT_TYPE_FIELD)
-		activation:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-		activation:SetCode(EFFECT_ACTIVATE_COST)
-		activation:SetTargetRange(1, 1)
 		local function activation_cost(effect)
 			local card = effect:GetHandler()
 			if card:IsType(TYPE_QUICKPLAY + TYPE_COUNTER)
@@ -32,14 +27,19 @@ MAYHEM.Register("56_energy_dominate", {
 			if card:IsType(TYPE_SPELL + TYPE_TRAP) then return params.normal_cost end
 			return 0
 		end
-		activation:SetTarget(function(e, effect) return activation_cost(effect) > 0 end)
-		activation:SetCost(function(e, effect, player)
-			local cost = activation_cost(effect)
-			e:SetLabel(cost)
-			return energy[player + 1] >= cost
-		end)
-		activation:SetOperation(function(e, player) spend(player, e:GetLabel()) end)
-		Duel.RegisterEffect(activation, 0)
+		-- Legality probes can interleave before payment, and AddChain does not
+		-- repeat the cost check. Fixed-price effects avoid a shared mutable label.
+		for price in pairs({ [params.normal_cost] = true, [params.quick_cost] = true }) do
+			local activation = Effect.GlobalEffect()
+			activation:SetType(EFFECT_TYPE_FIELD)
+			activation:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+			activation:SetCode(EFFECT_ACTIVATE_COST)
+			activation:SetTargetRange(1, 1)
+			activation:SetTarget(function(e, effect) return activation_cost(effect) == price end)
+			activation:SetCost(function(e, effect, player) return energy[player + 1] >= price end)
+			activation:SetOperation(function(e, player) spend(player, price) end)
+			Duel.RegisterEffect(activation, 0)
+		end
 
 		local summon = Effect.GlobalEffect()
 		summon:SetType(EFFECT_TYPE_FIELD)

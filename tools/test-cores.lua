@@ -149,6 +149,7 @@ Duel = {
 		return (recorder.field_groups[player + 1] or group(0)):GetCount()
 	end,
 	GetLocationCount = function() return 1 end,
+	GetFieldCard = function() return nil end,
 	IsExistingMatchingCard = function() return false end,
 	IsPlayerCanDraw = function() return true end,
 	SelectMatchingCard = function(player, filter, owner, location, other, minimum, maximum, except)
@@ -175,7 +176,7 @@ Duel = {
 	TossDice = function(...) record("Duel.TossDice", ...) return 3 end,
 	SelectYesNo = function(...) record("Duel.SelectYesNo", ...) return true end,
 	CalculateDamage = function(...) record("Duel.CalculateDamage", ...) end,
-	IsDuelType = function() return false end,
+	IsDuelType = function(flags) return ((recorder.duel_flags or 0) & flags) ~= 0 end,
 }
 
 function Duel.LoadScript(name)
@@ -340,7 +341,7 @@ tests["strength and efficiency install their field rules"] = function()
 	run({ enabled = { "29_strength_of_the_weak", "30_be_more_efficient" } })
 	assert(effect_with(EFFECT_IMMUNE_EFFECT), "weakest-monster immunity missing")
 	assert(effect_with(EFFECT_MAX_MZONE).value == 3, "monster zone cap missing")
-	assert(effect_with(EFFECT_MAX_SZONE).value == 3, "Spell Trap zone cap missing")
+	assert(effect_with(EFFECT_MAX_SZONE).value(nil, 0) == 3, "Spell Trap zone cap missing")
 end
 
 tests["leaking vrain registers a startup summon"] = function()
@@ -352,6 +353,7 @@ tests["droll limit locks the hand and draws only after five cards"] = function()
 	local function added_card(player)
 		return {
 			GetControler = function() return player end,
+			GetOwner = function() return player end,
 			IsLocation = function(_, value) return value == LOCATION_HAND end,
 			IsReason = function() return false end,
 		}
@@ -392,7 +394,8 @@ tests["once victory and trash hooks register"] = function()
 	local chain = effect_with(EVENT_CHAINING)
 	assert(chain, "first activation hook missing")
 	chain.operation(chain, 0, nil, 0, 1, nil, 0, 0)
-	assert(called("Duel.NegateActivation"), "first activation was not negated")
+	assert(called("Duel.NegateEffect"), "first effect was not negated")
+	assert(not called("Duel.NegateActivation"), "activation itself must stay valid")
 end
 
 tests["mirror and titan register summon and End Phase hooks"] = function()
@@ -444,7 +447,7 @@ end
 
 tests["final seven cores install their contracts"] = function()
 	run({ enabled = { "51_quick_play_owner_turn", "52_speed_duel_mentioned", "53_boss_is_always_boss", "54_break_the_loop", "55_gambling_draw", "56_energy_dominate", "57_magic_consume_silver" } })
-	assert(#effects_with(EFFECT_ACTIVATE_COST) == 2, "energy and magic activation costs missing")
+	assert(#effects_with(EFFECT_ACTIVATE_COST) == 3, "two energy prices and magic activation cost missing")
 	assert(effect_with(EFFECT_SPSUMMON_COST), "energy Special Summon cost missing")
 	assert(effect_with(EFFECT_SKIP_BP) == nil, "unrelated Battle Phase rule leaked")
 	fire_all(EVENT_STARTUP, 0)
@@ -453,7 +456,6 @@ end
 
 tests["energy starts at twelve spends two or four and refreshes the turn player"] = function()
 	run({ enabled = { "56_energy_dominate" } })
-	local activation = effect_with(EFFECT_ACTIVATE_COST)
 	local summon = effect_with(EFFECT_SPSUMMON_COST)
 	local function card(types)
 		return { IsType = function(_, mask) return (types & mask) ~= 0 end }
@@ -468,12 +470,19 @@ tests["energy starts at twelve spends two or four and refreshes the turn player"
 
 	fire_all(EVENT_STARTUP, 0)
 	local normal = activating(TYPE_SPELL, EFFECT_TYPE_ACTIVATE)
+	local activation
+	for _, rule in ipairs(effects_with(EFFECT_ACTIVATE_COST)) do
+		if rule.target(rule, normal, 0) then activation = rule end
+	end
 	assert(activation.target(activation, normal), "normal Spell must spend energy")
 	assert(activation.cost(activation, normal, 0), "player should afford a 2-energy Spell")
 	activation.operation(activation, 0)
 	assert(calls("Debug.Message")[3].args[1]:find("10/12", 1, true), "normal activation must leave 10")
 
 	local quick = activating(TYPE_MONSTER, EFFECT_TYPE_QUICK_O)
+	for _, rule in ipairs(effects_with(EFFECT_ACTIVATE_COST)) do
+		if rule.target(rule, quick, 0) then activation = rule end
+	end
 	assert(activation.cost(activation, quick, 0), "player should afford a 4-energy Quick Effect")
 	activation.operation(activation, 0)
 	assert(calls("Debug.Message")[4].args[1]:find("6/12", 1, true), "Quick Effect must leave 6")
@@ -496,6 +505,81 @@ tests["energy starts at twelve spends two or four and refreshes the turn player"
 	summon.operation(summon, 0)
 	assert(calls("Debug.Message")[8].args[1]:find("6/12", 1, true),
 		"a negated summon must release the group guard for the next action")
+end
+
+tests["first-turn draw supplements only rooms without native first-turn drawing"] = function()
+	run({ enabled = { "35_first_turn_advantage_silver" } })
+	fire_all(EVENT_PREDRAW, 0)
+	local draw = called("Duel.Draw")
+	assert(draw and draw.args[1] == 0 and draw.args[2] == 1 and draw.args[3] == REASON_RULE,
+		"first player must receive exactly one rule draw")
+	recorder.turn_count = 2
+	fire_all(EVENT_PREDRAW, 0)
+	assert(#calls("Duel.Draw") == 1, "later turns must use the engine's ordinary draw")
+	run({ enabled = { "35_first_turn_advantage_silver" } })
+	recorder.duel_flags = DUEL_1ST_TURN_DRAW
+	fire_all(EVENT_PREDRAW, 0)
+	assert(not called("Duel.Draw"), "native first-turn draw must not be doubled")
+end
+
+tests["trash negates only the first effect per player and resets next turn"] = function()
+	run({ enabled = { "38_this_card_is_trash" } })
+	for chain, player in ipairs({ 0, 0, 1, 1 }) do
+		fire_all(EVENT_CHAINING, 0, nil, 0, chain, nil, 0, player)
+	end
+	local negated = calls("Duel.NegateEffect")
+	assert(#negated == 2 and negated[1].args[1] == 1 and negated[2].args[1] == 3,
+		"only each player's first chain link should lose its effect")
+	assert(not called("Duel.NegateActivation"), "must preserve activation and its usage limits")
+	fire_all(EVENT_TURN_END, 0)
+	fire_all(EVENT_CHAINING, 0, nil, 0, 5, nil, 0, 0)
+	assert(#calls("Duel.NegateEffect") == 3, "next turn must negate again")
+end
+
+tests["gambling submits mandatory draws even when the deck is too small"] = function()
+	run({ enabled = { "55_gambling_draw" } })
+	local previous = Duel.IsPlayerCanDraw
+	Duel.IsPlayerCanDraw = function() return false end
+	fire_all(EVENT_PREDRAW, 0)
+	Duel.IsPlayerCanDraw = previous
+	local draws = calls("Duel.Draw")
+	assert(#draws == 2, "insufficient cards must not suppress mandatory draws")
+	for index, draw in ipairs(draws) do
+		assert(draw.args[1] == index - 1 and draw.args[2] == 3 and draw.args[3] == REASON_RULE,
+			"submit the full die result to the engine's deck-out handling")
+	end
+end
+
+tests["energy probes cannot change another action price"] = function()
+	run({ enabled = { "56_energy_dominate" } })
+	local function candidate(types, effect_types)
+		return {
+			GetHandler = function() return { IsType = function(_, mask) return (types & mask) ~= 0 end } end,
+			IsHasType = function(_, mask) return (effect_types & mask) ~= 0 end,
+		}
+	end
+	local normal = candidate(TYPE_SPELL, EFFECT_TYPE_ACTIVATE)
+	local quick = candidate(TYPE_MONSTER, EFFECT_TYPE_QUICK_O)
+	local function probe(effect, player)
+		local selected
+		for _, rule in ipairs(effects_with(EFFECT_ACTIVATE_COST)) do
+			if rule.target(rule, effect, player) then
+				assert(not selected, "a single action must not match two prices")
+				assert(rule.cost(rule, effect, player))
+				selected = rule
+			end
+		end
+		return selected
+	end
+	local ordinary_rule = probe(normal, 0)
+	local quick_rule = probe(quick, 1)
+	ordinary_rule.operation(ordinary_rule, 0)
+	probe(normal, 1)
+	quick_rule.operation(quick_rule, 1)
+	local hints = calls("Duel.Hint")
+	assert(hints[1].args[3] == 10 and hints[2].args[3] == 8,
+		"interleaved probes must charge 2 for Spell and 4 for Quick Effect")
+	assert(not probe(candidate(TYPE_MONSTER, EFFECT_TYPE_IGNITION), 0), "ordinary monster effect is free")
 end
 
 tests["no core listens on EVENT_PHASE"] = function()

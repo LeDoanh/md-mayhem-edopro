@@ -2,13 +2,16 @@
 MAYHEM.Register("39_mirror_mirror_on_the_wall", {
 	apply = function()
 		Duel.LoadScript("mayhem_token_codes.lua")
+		local mirrored = {}
 		local function mirror(e, tp, monsters)
 			local monster = monsters:GetFirst()
 			while monster do
-				if not monster:IsType(TYPE_TOKEN) then
+				-- Only our own Tokens are excluded: other Token summons also mirror.
+				if not mirrored[monster] then
 					local target = 1 - monster:GetControler()
 					if Duel.GetLocationCount(target, LOCATION_MZONE) > 0 then
 						local token = Duel.CreateToken(target, MAYHEM_TOKEN_CODE)
+						mirrored[token] = true
 						local attack = Effect.CreateEffect(token)
 						attack:SetType(EFFECT_TYPE_SINGLE)
 						attack:SetCode(EFFECT_SET_ATTACK_FINAL)

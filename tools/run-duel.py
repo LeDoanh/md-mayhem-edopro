@@ -316,7 +316,9 @@ def main() -> int:
 
     for team in (0, 1):
         for _ in range(DECK_SIZE):
-            info = OCG_NewCardInfo(team, team, FILLER_CARD, team, 0x1, 0, 0x8)
+            # Each team has one duelist, at index 0. Using team as the index
+            # puts player 2's cards in a nonexistent teammate's deck.
+            info = OCG_NewCardInfo(team, 0, FILLER_CARD, team, 0x1, 0, 0x8)
             core.OCG_DuelNewCard(duel, byref(info))
 
     print("\nstarting duel")

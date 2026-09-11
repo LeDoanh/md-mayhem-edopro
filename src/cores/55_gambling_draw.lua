@@ -5,7 +5,9 @@ MAYHEM.Register("55_gambling_draw", {
 		MAYHEM.OnEvent(EVENT_PREDRAW, function()
 			local result = Duel.TossDice(Duel.GetTurnPlayer(), 1)
 			for player = 0, 1 do
-				if Duel.IsPlayerCanDraw(player, result) then Duel.Draw(player, result, REASON_RULE) end
+				-- A compulsory draw must reach the engine even with too few cards:
+				-- its normal deck-out handling decides the result.
+				Duel.Draw(player, result, REASON_RULE)
 			end
 		end)
 	end,

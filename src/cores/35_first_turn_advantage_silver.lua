@@ -12,6 +12,14 @@ MAYHEM.Register("35_first_turn_advantage_silver", {
 		draw:SetValue(1)
 		draw:SetReset(RESET_PHASE + PHASE_DRAW)
 		Duel.RegisterEffect(draw, 0)
+		-- DRAW_COUNT cannot enable the first player's otherwise-skipped draw.
+		-- PREDRAW respects a skipped Draw Phase; rooms that already draw on turn
+		-- one keep the engine's draw instead of receiving a second copy here.
+		MAYHEM.OnEvent(EVENT_PREDRAW, function()
+			if Duel.GetTurnCount() == 1 and not Duel.IsDuelType(DUEL_1ST_TURN_DRAW) then
+				Duel.Draw(Duel.GetTurnPlayer(), 1, REASON_RULE)
+			end
+		end)
 		local function protected(e, chain)
 			local _, player = Duel.GetChainInfo(chain, CHAININFO_TRIGGERING_EFFECT, CHAININFO_TRIGGERING_PLAYER)
 			return Duel.GetTurnCount() <= 2 and player == Duel.GetTurnPlayer()

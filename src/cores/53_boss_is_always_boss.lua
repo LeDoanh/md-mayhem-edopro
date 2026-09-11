@@ -1,4 +1,4 @@
--- Boss is alway Boss - every face-up monster tied for highest ATK ignores card effects.
+-- Boss is alway Boss - face-up monsters tied for highest ATK ignore other cards' effects.
 MAYHEM.Register("53_boss_is_always_boss", {
 	apply = function()
 		local rule = Effect.GlobalEffect()
@@ -13,7 +13,7 @@ MAYHEM.Register("53_boss_is_always_boss", {
 			local _, attack = monsters:GetMaxGroup(Card.GetAttack)
 			return card:GetAttack() == attack
 		end)
-		rule:SetValue(function() return true end)
+		rule:SetValue(function(e, incoming, card) return incoming:GetOwner() ~= card end)
 		Duel.RegisterEffect(rule, 0)
 	end,
 })
